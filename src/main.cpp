@@ -28,6 +28,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
 unsigned int loadTexture(char const * path);
 
+void jumpCheck();
+
+void mushroomCheck();
+
+unsigned int loadCubemap(vector<std::string> faces);
+
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -42,6 +48,16 @@ bool firstMouse = true;
 // timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
+
+// Mario jump
+bool jump = false;
+float jumpSpeed = 0.1;
+float currentJumpHeight = 0;
+float jumpLimit = 1.7f;
+
+// mushroom
+bool mushroomVisible = false;
+float mushroomHeight = 0;
 
 struct PointLight {
     glm::vec3 position;
@@ -139,6 +155,9 @@ int main() {
         return -1;
     }
 
+    glEnable(GL_DEPTH_TEST);
+
+
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
 
@@ -165,6 +184,7 @@ int main() {
     // build and compile shaders
     // -------------------------
     Shader ourShader("resources/shaders/model_shader.vs", "resources/shaders/model_shader.fs");
+    Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader brickBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader marioBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader redDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
@@ -173,6 +193,79 @@ int main() {
     Shader lightBlueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader yellowDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader pinkDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+
+
+    float skyboxVertices[] = {
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
+    };
+
+    // skybox VAO
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+
+
+    // load cubemap textures
+    vector<std::string> faces
+    {
+        FileSystem::getPath("resources/textures/skybox_tmp/right.jpg"),
+        FileSystem::getPath("resources/textures/skybox_tmp/left.jpg"),
+        FileSystem::getPath("resources/textures/skybox_tmp/top.jpg"),
+        FileSystem::getPath("resources/textures/skybox_tmp/bottom.jpg"),
+        FileSystem::getPath("resources/textures/skybox_tmp/front.jpg"),
+        FileSystem::getPath("resources/textures/skybox_tmp/back.jpg")
+    };
+
+    unsigned int cubemapTexture = loadCubemap(faces);
+    skyboxShader.use();
+    skyboxShader.setInt("skybox", 0);
+
 
     float boxVertices[] = {
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -426,11 +519,28 @@ int main() {
             DrawImGui(programState);
 
 
+        // draw skybox as last
+        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        skyboxShader.use();
+        view = glm::mat4(glm::mat3(programState->camera.GetViewMatrix())); // remove translation from the view matrix
+        skyboxShader.setMat4("view", glm::mat4(glm::mat3(view)));
+        skyboxShader.setMat4("projection", projection);
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS); // set depth function back to default
+
+
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+
     }
 
     programState->SaveToFile("resources/program_state.txt");
@@ -458,6 +568,12 @@ void processInput(GLFWwindow *window) {
         programState->camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        jump = true;
+
+    if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        mushroomVisible = false;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -540,6 +656,38 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
 }
 
+unsigned int loadCubemap(vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
+
+
+
 unsigned int loadTexture(char const * path)
 {
     unsigned int textureID;
@@ -576,3 +724,29 @@ unsigned int loadTexture(char const * path)
 
     return textureID;
 }
+
+void jumpCheck(){
+    if(jump)
+        currentJumpHeight += jumpSpeed;
+
+    if(currentJumpHeight >= jumpLimit){
+        jump = false;
+        mushroomVisible = true;
+    }
+
+    if(jump == false && currentJumpHeight > 0)
+        currentJumpHeight -= jumpSpeed;
+}
+
+void mushroomCheck(){
+    if(mushroomVisible){
+        if(mushroomHeight < 0.8f)
+            mushroomHeight += 0.03;
+    }
+    else{
+        if(mushroomHeight > 0)
+            mushroomHeight -= 0.03;
+    }
+}
+
+
