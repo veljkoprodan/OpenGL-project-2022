@@ -163,10 +163,20 @@ int main() {
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
 
+
     // load models
     // -----------
     Model ourModel("resources/objects/backpack/backpack.obj");
     ourModel.SetShaderTextureNamePrefix("material.");
+
+    Model islandModel("resources/objects/island/EO0AAAMXQ0YGMC13XX7X56I3L.obj");
+    islandModel.SetShaderTextureNamePrefix("material.");
+
+    Model coinModel("resources/objects/coin/Coin.obj");
+    coinModel.SetShaderTextureNamePrefix("material.");
+
+    Model mushroomModel("resources/objects/mushroom/693sxrp8upr3.obj");
+    mushroomModel.SetShaderTextureNamePrefix("material.");
 
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -228,6 +238,26 @@ int main() {
         model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", model);
         ourModel.Draw(ourShader);
+
+        glm::mat4 modelIsland = glm::mat4(1.0f);
+        modelIsland = glm::translate(modelIsland, glm::vec3 (0.0f, 0.0f, 0.0f));
+        modelIsland = glm::scale(modelIsland, glm::vec3(10.0f));
+        ourShader.setMat4("model", modelIsland);
+        islandModel.Draw(ourShader);
+
+        glm::mat4 modelCoin = glm::mat4(1.0f);
+        modelCoin = glm::translate(modelCoin, glm::vec3 (-18.0f, 8.0f, 0.0f));
+        modelCoin = glm::scale(modelCoin, glm::vec3(0.02f));
+        modelCoin = glm::rotate(modelCoin, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+        ourShader.setMat4("model", modelCoin);
+        coinModel.Draw(ourShader);
+
+        glm::mat4 modelMushroom = glm::mat4(1.0f);
+        modelMushroom = glm::translate(modelMushroom, glm::vec3(-5.0f, -0.3f + mushroomHeight, 0.0f));
+        modelMushroom = glm::rotate(modelMushroom, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMushroom = glm::scale(modelMushroom, glm::vec3(0.3f));
+        ourShader.setMat4("model", modelMushroom);
+        mushroomModel.Draw(ourShader);
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
