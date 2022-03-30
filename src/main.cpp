@@ -157,6 +157,14 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
+    // face culling
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
+    // blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
@@ -514,6 +522,31 @@ int main() {
         modelShip = glm::scale(modelShip, glm::vec3(10.0f));
         ourShader.setMat4("model", modelShip);
         shipModel.Draw(ourShader);
+
+
+//        glDisable(GL_CULL_FACE);
+
+//        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
+//        modelRedDiamond = glm::translate(modelRedDiamond, glm::vec3(-18.0f, 0.0f, 13.0f));
+//        modelRedDiamond = glm::scale(modelRedDiamond, glm::vec3(0.1f));
+//        ourShader.setMat4("model", modelRedDiamond);
+//        redDiamondModel.Draw(ourShader);
+
+//        glm::mat4 modelGreenDiamond = glm::mat4(1.0f);
+//        modelGreenDiamond = glm::translate(modelGreenDiamond, glm::vec3(-18.0f, 0.0f, 9.0f));
+//        modelGreenDiamond = glm::scale(modelGreenDiamond, glm::vec3(0.1f));
+//        ourShader.setMat4("model", modelGreenDiamond);
+//        greenDiamondModel.Draw(ourShader);
+
+//        glm::mat4 modelBlueDiamond = glm::mat4(1.0f);
+//        modelBlueDiamond = glm::translate(modelBlueDiamond, glm::vec3(-18.0f, 0.0f, 5.0f));
+//        modelBlueDiamond = glm::scale(modelBlueDiamond, glm::vec3(0.1f));
+//        ourShader.setMat4("model", modelBlueDiamond);
+//        blueDiamondModel.Draw(ourShader);
+
+
+
+//        glEnable(GL_CULL_FACE);
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
