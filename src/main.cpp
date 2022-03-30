@@ -26,28 +26,13 @@ void processInput(GLFWwindow *window);
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-unsigned int loadTexture(char const * path);
-
 void jumpCheck();
 
 void mushroomCheck();
 
 unsigned int loadCubemap(vector<std::string> faces);
 
-
-// settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-
-// camera
-
-float lastX = SCR_WIDTH / 2.0f;
-float lastY = SCR_HEIGHT / 2.0f;
-bool firstMouse = true;
-
-// timing
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
+unsigned int loadTexture(char const * path);
 
 // Mario jump
 bool jump = false;
@@ -58,6 +43,20 @@ float jumpLimit = 1.7f;
 // mushroom
 bool mushroomVisible = false;
 float mushroomHeight = 0;
+
+
+// settings
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
+// camera
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
+
+// timing
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 struct PointLight {
     glm::vec3 position;
@@ -157,17 +156,8 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
-    // face culling
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
-    // blending
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
-    stbi_set_flip_vertically_on_load(true);
+    //stbi_set_flip_vertically_on_load(true);
 
     programState = new ProgramState;
     programState->LoadFromFile("resources/program_state.txt");
@@ -189,6 +179,14 @@ int main() {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
+    // face culling
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
+    // blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // build and compile shaders
     // -------------------------
     Shader ourShader("resources/shaders/model_shader.vs", "resources/shaders/model_shader.fs");
@@ -202,49 +200,92 @@ int main() {
     Shader yellowDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader pinkDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
 
+    float boxVertices[] = {
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
 
     float skyboxVertices[] = {
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
 
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
 
-        -1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f, -1.0f,
-         1.0f,  1.0f,  1.0f,
-         1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
 
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f, -1.0f,
-         1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-         1.0f, -1.0f,  1.0f
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
     };
 
     // skybox VAO
@@ -256,68 +297,6 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-
-
-
-    // load cubemap textures
-    vector<std::string> faces
-    {
-        FileSystem::getPath("resources/textures/skybox_tmp/right.jpg"),
-        FileSystem::getPath("resources/textures/skybox_tmp/left.jpg"),
-        FileSystem::getPath("resources/textures/skybox_tmp/top.jpg"),
-        FileSystem::getPath("resources/textures/skybox_tmp/bottom.jpg"),
-        FileSystem::getPath("resources/textures/skybox_tmp/front.jpg"),
-        FileSystem::getPath("resources/textures/skybox_tmp/back.jpg")
-    };
-
-    unsigned int cubemapTexture = loadCubemap(faces);
-    skyboxShader.use();
-    skyboxShader.setInt("skybox", 0);
-
-
-    float boxVertices[] = {
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-    };
 
     // box VAO
     unsigned int boxVAO, boxVBO;
@@ -331,6 +310,22 @@ int main() {
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
+    // load cubemap textures
+    vector<std::string> faces
+            {
+                    FileSystem::getPath("resources/textures/skybox_tmp/right.jpg"),
+                    FileSystem::getPath("resources/textures/skybox_tmp/left.jpg"),
+                    FileSystem::getPath("resources/textures/skybox_tmp/top.jpg"),
+                    FileSystem::getPath("resources/textures/skybox_tmp/bottom.jpg"),
+                    FileSystem::getPath("resources/textures/skybox_tmp/front.jpg"),
+                    FileSystem::getPath("resources/textures/skybox_tmp/back.jpg")
+            };
+
+    unsigned int cubemapTexture = loadCubemap(faces);
+    skyboxShader.use();
+    skyboxShader.setInt("skybox", 0);
+
+
     // load box textures
     stbi_set_flip_vertically_on_load(true);
     unsigned int brickTexture = loadTexture(FileSystem::getPath("resources/textures/brick.jpg").c_str());
@@ -340,28 +335,6 @@ int main() {
     marioBoxShader.use();
     marioBoxShader.setInt("texture1", 0);
     stbi_set_flip_vertically_on_load(false);
-
-
-    // load models
-    // -----------
-
-    Model islandModel("resources/objects/island/EO0AAAMXQ0YGMC13XX7X56I3L.obj");
-    islandModel.SetShaderTextureNamePrefix("material.");
-
-    Model coinModel("resources/objects/coin/Coin.obj");
-    coinModel.SetShaderTextureNamePrefix("material.");
-
-    Model mushroomModel("resources/objects/mushroom/693sxrp8upr3.obj");
-    mushroomModel.SetShaderTextureNamePrefix("material.");
-
-    Model marioModel("resources/objects/mario/1DNSCLY0D1YQZHJRH142C5GI0.obj");
-    marioModel.SetShaderTextureNamePrefix("material.");
-
-    Model shipModel("resources/objects/ship/FBRIPHH48VJVZ9GUIX3KK06PB.obj");
-    shipModel.SetShaderTextureNamePrefix("material.");
-
-    Model diamondModel("resources/objects/diamond/diamond.obj");
-    diamondModel.SetShaderTextureNamePrefix("material.");
 
     // load diamond textures
     unsigned int redDiamondTexture = loadTexture(
@@ -384,6 +357,39 @@ int main() {
     yellowDiamondShader.setInt("texture1", 0);
     pinkDiamondShader.setInt("texture1", 0);
 
+    // load models
+    // -----------
+    Model ourModel("resources/objects/backpack/backpack.obj");
+    ourModel.SetShaderTextureNamePrefix("material.");
+
+    Model islandModel("resources/objects/island/EO0AAAMXQ0YGMC13XX7X56I3L.obj");
+    islandModel.SetShaderTextureNamePrefix("material.");
+
+    Model coinModel("resources/objects/coin/Coin.obj");
+    coinModel.SetShaderTextureNamePrefix("material.");
+
+    Model mushroomModel("resources/objects/mushroom/693sxrp8upr3.obj");
+    mushroomModel.SetShaderTextureNamePrefix("material.");
+
+    Model marioModel("resources/objects/mario/1DNSCLY0D1YQZHJRH142C5GI0.obj");
+    marioModel.SetShaderTextureNamePrefix("material.");
+
+    Model shipModel("resources/objects/ship/FBRIPHH48VJVZ9GUIX3KK06PB.obj");
+    shipModel.SetShaderTextureNamePrefix("material.");
+
+    Model diamondModel("resources/objects/diamond/diamond.obj");
+    diamondModel.SetShaderTextureNamePrefix("material.");
+
+    // ugh
+//    Model redDiamondModel("resources/objects/diamonds/red/diamond.obj");
+//    redDiamondModel.SetShaderTextureNamePrefix("material.");
+
+//    Model greenDiamondModel("resources/objects/diamonds/green/diamond.obj");
+//    greenDiamondModel.SetShaderTextureNamePrefix("material.");
+
+//    Model blueDiamondModel("resources/objects/diamonds/blue/diamond.obj");
+//    blueDiamondModel.SetShaderTextureNamePrefix("material.");
+
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
     pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
@@ -402,6 +408,7 @@ int main() {
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window)) {
+
         // per-frame time logic
         // --------------------
         float currentFrame = glfwGetTime();
@@ -412,43 +419,23 @@ int main() {
         // -----
         processInput(window);
 
+        //todo sortiranje providnih
+
+
+        jumpCheck();
+        mushroomCheck();
+
 
         // render
         // ------
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // don't forget to enable shader before setting uniforms
-        ourShader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 32.0f);
-        // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
 
-        // diamonds
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, redDiamondTexture);
-        redDiamondShader.use();
-        redDiamondShader.setMat4("projection", projection);
-        redDiamondShader.setMat4("view", view);
-        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
-        modelRedDiamond = glm::translate(modelRedDiamond, glm::vec3(-10.0f, 2.0f, 0.0f));
-        //modelRedDiamond = glm::rotate(modelRedDiamond, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelRedDiamond = glm::scale(modelRedDiamond, glm::vec3(0.1f));
-        redDiamondShader.setMat4("model", modelRedDiamond);
-        diamondModel.Draw(redDiamondShader);
+        glDisable(GL_CULL_FACE);
 
         // brick box
         glActiveTexture(GL_TEXTURE0);
@@ -490,7 +477,45 @@ int main() {
         brickBoxShader.setMat4("model", modelMarioBox);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        // render the loaded model
+
+        // diamonds
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, redDiamondTexture);
+        redDiamondShader.use();
+        redDiamondShader.setMat4("projection", projection);
+        redDiamondShader.setMat4("view", view);
+        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
+        modelRedDiamond = glm::translate(modelRedDiamond, glm::vec3(-10.0f, 2.0f, 0.0f));
+        //modelRedDiamond = glm::rotate(modelRedDiamond, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelRedDiamond = glm::scale(modelRedDiamond, glm::vec3(0.1f));
+        redDiamondShader.setMat4("model", modelRedDiamond);
+        diamondModel.Draw(redDiamondShader);
+
+
+        glEnable(GL_CULL_FACE);
+
+        // don't forget to enable shader before setting uniforms
+        ourShader.use();
+        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        ourShader.setVec3("pointLight.position", pointLight.position);
+        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
+        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        ourShader.setVec3("pointLight.specular", pointLight.specular);
+        ourShader.setFloat("pointLight.constant", pointLight.constant);
+        ourShader.setFloat("pointLight.linear", pointLight.linear);
+        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+        ourShader.setVec3("viewPosition", programState->camera.Position);
+        ourShader.setFloat("material.shininess", 32.0f);
+        // view/projection transformations
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
+
+
+
+
+
+        // render the loaded models
+
         glm::mat4 modelIsland = glm::mat4(1.0f);
         modelIsland = glm::translate(modelIsland, glm::vec3 (0.0f, 0.0f, 0.0f));
         modelIsland = glm::scale(modelIsland, glm::vec3(10.0f));
@@ -523,7 +548,6 @@ int main() {
         ourShader.setMat4("model", modelShip);
         shipModel.Draw(ourShader);
 
-
 //        glDisable(GL_CULL_FACE);
 
 //        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
@@ -548,9 +572,9 @@ int main() {
 
 //        glEnable(GL_CULL_FACE);
 
+
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
-
 
         // draw skybox as last
         glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
@@ -567,13 +591,10 @@ int main() {
         glDepthFunc(GL_LESS); // set depth function back to default
 
 
-
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
-
-
     }
 
     programState->SaveToFile("resources/program_state.txt");
@@ -654,8 +675,8 @@ void DrawImGui(ProgramState *programState) {
         ImGui::Text("Hello text");
         ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
         ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
+        //ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
+        //ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
 
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
@@ -718,8 +739,6 @@ unsigned int loadCubemap(vector<std::string> faces)
 
     return textureID;
 }
-
-
 
 unsigned int loadTexture(char const * path)
 {
