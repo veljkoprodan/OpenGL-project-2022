@@ -26,6 +26,9 @@ void processInput(GLFWwindow *window);
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
+unsigned int loadTexture(char const * path);
+
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -161,7 +164,15 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader ourShader("resources/shaders/model_shader.vs", "resources/shaders/model_shader.fs");
+    Shader brickBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader marioBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader redDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader blueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader greenDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader lightBlueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader yellowDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader pinkDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
 
     float boxVertices[] = {
         -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
@@ -251,6 +262,27 @@ int main() {
     Model diamondModel("resources/objects/diamond/diamond.obj");
     diamondModel.SetShaderTextureNamePrefix("material.");
 
+    // load diamond textures
+    unsigned int redDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/red-transparent.png").c_str());
+    unsigned int blueDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/blue-transparent.png").c_str());
+    unsigned int greenDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/green-transparent.png").c_str());
+    unsigned int lightBlueDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/light-blue-transparent.png").c_str());
+    unsigned int yellowDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/yellow-transparent.png").c_str());
+    unsigned int pinkDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/pink-transparent.png").c_str());
+
+    redDiamondShader.setInt("texture1", 0);
+    blueDiamondShader.setInt("texture1", 0);
+    greenDiamondShader.setInt("texture1", 0);
+    lightBlueDiamondShader.setInt("texture1", 0);
+    yellowDiamondShader.setInt("texture1", 0);
+    pinkDiamondShader.setInt("texture1", 0);
+
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
     pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
@@ -303,6 +335,19 @@ int main() {
         glm::mat4 view = programState->camera.GetViewMatrix();
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
+
+        // diamonds
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, redDiamondTexture);
+        redDiamondShader.use();
+        redDiamondShader.setMat4("projection", projection);
+        redDiamondShader.setMat4("view", view);
+        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
+        modelRedDiamond = glm::translate(modelRedDiamond, glm::vec3(-10.0f, 2.0f, 0.0f));
+        //modelRedDiamond = glm::rotate(modelRedDiamond, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelRedDiamond = glm::scale(modelRedDiamond, glm::vec3(0.1f));
+        redDiamondShader.setMat4("model", modelRedDiamond);
+        diamondModel.Draw(redDiamondShader);
 
         // brick box
         glActiveTexture(GL_TEXTURE0);
@@ -364,6 +409,18 @@ int main() {
         modelMushroom = glm::scale(modelMushroom, glm::vec3(0.3f));
         ourShader.setMat4("model", modelMushroom);
         mushroomModel.Draw(ourShader);
+
+        glm::mat4 modelMario = glm::mat4(1.0f);
+        modelMario = glm::translate(modelMario, glm::vec3(-5.0f, -3.0f + currentJumpHeight, 0.2f));
+        modelMario = glm::scale(modelMario, glm::vec3(0.4f));
+        ourShader.setMat4("model", modelMario);
+        marioModel.Draw(ourShader);
+
+        glm::mat4 modelShip = glm::mat4(1.0f);
+        modelShip = glm::translate(modelShip, glm::vec3(-18.0f, 0.0f, 0.0f));
+        modelShip = glm::scale(modelShip, glm::vec3(10.0f));
+        ourShader.setMat4("model", modelShip);
+        shipModel.Draw(ourShader);
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
@@ -481,4 +538,41 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
+}
+
+unsigned int loadTexture(char const * path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
 }
