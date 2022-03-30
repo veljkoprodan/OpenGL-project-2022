@@ -56,8 +56,8 @@ struct ProgramState {
     bool ImGuiEnabled = false;
     Camera camera;
     bool CameraMouseMovementUpdateEnabled = true;
-    glm::vec3 backpackPosition = glm::vec3(0.0f);
-    float backpackScale = 1.0f;
+    //glm::vec3 backpackPosition = glm::vec3(0.0f);
+    //float backpackScale = 1.0f;
     PointLight pointLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
@@ -163,11 +163,75 @@ int main() {
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
 
+    float boxVertices[] = {
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
+
+    // box VAO
+    unsigned int boxVAO, boxVBO;
+    glGenVertexArrays(1, &boxVAO);
+    glGenBuffers(1, &boxVBO);
+    glBindVertexArray(boxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, boxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(boxVertices), boxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+    // load box textures
+    stbi_set_flip_vertically_on_load(true);
+    unsigned int brickTexture = loadTexture(FileSystem::getPath("resources/textures/brick.jpg").c_str());
+    unsigned int marioBoxTexture = loadTexture(FileSystem::getPath("resources/textures/mario_cube.jpg").c_str());
+    brickBoxShader.use();
+    brickBoxShader.setInt("texture1", 0);
+    marioBoxShader.use();
+    marioBoxShader.setInt("texture1", 0);
+    stbi_set_flip_vertically_on_load(false);
+
 
     // load models
     // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
 
     Model islandModel("resources/objects/island/EO0AAAMXQ0YGMC13XX7X56I3L.obj");
     islandModel.SetShaderTextureNamePrefix("material.");
@@ -177,6 +241,15 @@ int main() {
 
     Model mushroomModel("resources/objects/mushroom/693sxrp8upr3.obj");
     mushroomModel.SetShaderTextureNamePrefix("material.");
+
+    Model marioModel("resources/objects/mario/1DNSCLY0D1YQZHJRH142C5GI0.obj");
+    marioModel.SetShaderTextureNamePrefix("material.");
+
+    Model shipModel("resources/objects/ship/FBRIPHH48VJVZ9GUIX3KK06PB.obj");
+    shipModel.SetShaderTextureNamePrefix("material.");
+
+    Model diamondModel("resources/objects/diamond/diamond.obj");
+    diamondModel.SetShaderTextureNamePrefix("material.");
 
     PointLight& pointLight = programState->pointLight;
     pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
@@ -231,14 +304,47 @@ int main() {
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
+        // brick box
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, brickTexture);
+        brickBoxShader.use();
+        brickBoxShader.setMat4("projection", projection);
+        brickBoxShader.setMat4("view", view);
+        glBindVertexArray(boxVAO);
 
+        for(int i = 0; i < 3; i++){
+            glm::mat4 modelBrickBox = glm::mat4(1.0f);
+            float boxTranslation = (float)i * 1.0f;
+
+            // make space for Mario box
+            if(i == 2)
+                boxTranslation += 1.0f;
+
+            modelBrickBox = glm::translate(modelBrickBox, glm::vec3(-5.0f, -0.4f, 2.0f - boxTranslation));
+            modelBrickBox = glm::rotate(modelBrickBox, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            modelBrickBox = glm::scale(modelBrickBox, glm::vec3(1.0f));
+
+            brickBoxShader.setMat4("model", modelBrickBox);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+
+
+        // Mario box
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, marioBoxTexture);
+        marioBoxShader.use();
+        marioBoxShader.setMat4("projection", projection);
+        marioBoxShader.setMat4("view", view);
+        glBindVertexArray(boxVAO);
+        glm::mat4 modelMarioBox = glm::mat4(1.0f);
+        modelMarioBox = glm::translate(modelMarioBox, glm::vec3(-5.0f, -0.4f, 0.0f));
+        modelMarioBox = glm::rotate(modelMarioBox, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelMarioBox = glm::scale(modelMarioBox, glm::vec3(1.0f));
+        brickBoxShader.setMat4("model", modelMarioBox);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // render the loaded model
         glm::mat4 modelIsland = glm::mat4(1.0f);
         modelIsland = glm::translate(modelIsland, glm::vec3 (0.0f, 0.0f, 0.0f));
         modelIsland = glm::scale(modelIsland, glm::vec3(10.0f));
