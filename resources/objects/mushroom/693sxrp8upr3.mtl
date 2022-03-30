@@ -1,0 +1,44 @@
+# File produced by Open Asset Import Library (http://www.assimp.sf.net)
+# (assimp v4.1.0)
+
+newmtl lambert2SG
+Kd 0.5 0.5 0.5
+Ka 0 0 0
+Ks 0 0 0
+Ke 0 0 0
+d 0
+Ni 1
+illum 1
+map_Kd lambert2SG_albedo.jpg
+map_Ka lambert2SG_AO.jpg
+map_Ks lambert2SG_metallic.jpg
+map_Bump lambert2SG_normal.jpg
+map_Ns lambert2SG_roughness.jpg
+
+newmtl lambert3SG
+Kd 0.5 0.5 0.5
+Ka 0 0 0
+Ks 0 0 0
+Ke 0 0 0
+d 0
+Ni 1
+illum 1
+map_Kd lambert3SG_albedo.jpg
+map_Ka lambert3SG_AO.jpg
+map_Ks lambert3SG_metallic.jpg
+map_Bump lambert3SG_normal.jpg
+map_Ns lambert3SG_roughness.jpg
+
+newmtl lambert4SG
+Kd 0.5 0.5 0.5
+Ka 0 0 0
+Ks 0 0 0
+Ke 0 0 0
+d 0
+Ni 1
+illum 1
+map_Kd lambert4SG_albedo.jpg
+map_Ka lambert4SG_AO.jpg
+map_Ks lambert4SG_metallic.jpg
+map_Bump lambert4SG_normal.jpg
+map_Ns lambert4SG_roughness.jpg
