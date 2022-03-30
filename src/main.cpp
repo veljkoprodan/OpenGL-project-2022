@@ -71,6 +71,7 @@ struct ProgramState {
     //float backpackScale = 1.0f;
     PointLight pointLight;
     DirLight dirLight;
+    SpotLight spotLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
 
