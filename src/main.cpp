@@ -359,8 +359,6 @@ int main() {
 
     // load models
     // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
 
     Model islandModel("resources/objects/island/EO0AAAMXQ0YGMC13XX7X56I3L.obj");
     islandModel.SetShaderTextureNamePrefix("material.");
