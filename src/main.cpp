@@ -184,10 +184,10 @@ int main() {
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/model_shader.vs", "resources/shaders/model_shader.fs");
+    Shader ourShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
-    Shader brickBoxShader("resources/shaders/box.vs", "resources/shaders/box.fs");
-    Shader marioBoxShader("resources/shaders/box.vs", "resources/shaders/box.fs");
+    Shader brickBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader marioBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader redDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader blueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader greenDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
@@ -766,9 +766,10 @@ void setLights(Shader shaderName){
     shaderName.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
     //pointlight properties
     shaderName.setVec3("pointLights[0].position", lightPos);
-    shaderName.setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
-    shaderName.setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
+    shaderName.setVec3("pointLights[0].ambient", 0.1f, 0.1f, 0.1f);
+    shaderName.setVec3("pointLights[0].diffuse", 0.6f, 0.6f, 0.6f);
     shaderName.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+
     shaderName.setFloat("pointLights[0].constant", 1.0f);
     shaderName.setFloat("pointLights[0].linear", 0.09f);
     shaderName.setFloat("pointLights[0].quadratic", 0.032f);
