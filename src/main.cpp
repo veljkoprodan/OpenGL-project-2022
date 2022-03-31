@@ -404,9 +404,15 @@ int main() {
     for (unsigned int i = 0; i < coinAmount; i++){
         glm::mat4 modelCoin = glm::mat4(1.0f);
 
-        modelCoin = glm::translate(modelCoin, glm::vec3(0.0f + offset * i, 10.0f, 0.0f));
-        modelCoin = glm::rotate(modelCoin, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelCoin = glm::scale(modelCoin, glm::vec3(0.02f));
+        if(i < 4)
+            modelCoin = glm::translate(modelCoin, glm::vec3(-1.1f, 5.3f, -0.1f + i*1.9f));
+        else if(i < 7)
+            modelCoin = glm::translate(modelCoin, glm::vec3(0.35f + 1.95f * (i-4), 5.3f, 7.7f));
+        else
+            modelCoin = glm::translate(modelCoin, glm::vec3(0.35f + 1.95f * (i-7), 5.3f, -2.2f));
+
+        modelCoin = glm::rotate(modelCoin, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelCoin = glm::scale(modelCoin, glm::vec3(0.01f));
 
         modelMatrices[i] = modelCoin;
     }
@@ -482,6 +488,7 @@ int main() {
         //glActiveTexture(GL_TEXTURE1);
         //glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[1].id);
 
+        // instancing
         for (unsigned int i = 0; i < coinModel.meshes.size(); i++)
         {
             glBindVertexArray(coinModel.meshes[i].VAO);
