@@ -36,6 +36,8 @@ unsigned int loadCubemap(vector<std::string> faces);
 
 unsigned int loadTexture(char const * path);
 
+bool spotlightOn = false;
+
 // Mario jump
 bool jump = false;
 float jumpSpeed = 0.1;
@@ -638,11 +640,6 @@ void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
 
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        jump = true;
-
-    if(glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        mushroomVisible = false;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -723,6 +720,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
     }
+
+    if (key == GLFW_KEY_F && action == GLFW_PRESS)
+        spotlightOn = !spotlightOn;
+
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+        jump = true;
+
+    if(key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
+        mushroomVisible = false;
 }
 
 unsigned int loadCubemap(vector<std::string> faces)
@@ -784,6 +790,11 @@ void setLights(Shader shader){
     shader.setFloat("spotLight.quadratic", 0.032f);
     shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
     shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+
+    if(!spotlightOn){
+        shader.setVec3("spotLight.diffuse", 0.0f, 0.0f, 0.0f);
+        shader.setVec3("spotLight.specular", 0.0f, 0.0f, 0.0f);
+    }
 }
 
 unsigned int loadTexture(char const * path)
