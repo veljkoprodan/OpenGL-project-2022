@@ -151,8 +151,6 @@ int main() {
         return -1;
     }
 
-    glEnable(GL_DEPTH_TEST);
-
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     //stbi_set_flip_vertically_on_load(true);
 
@@ -190,13 +188,8 @@ int main() {
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader brickBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader marioBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-    Shader redDiamondShader("resources/shaders/testDiamondShader.vs", "resources/shaders/testDiamondShader.fs");
+    Shader diamondShader("resources/shaders/testDiamondShader.vs", "resources/shaders/testDiamondShader.fs");
     Shader coinShader("resources/shaders/coinInstancingShader.vs", "resources/shaders/coinInstancingShader.fs");
-//    Shader blueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-//    Shader greenDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-//    Shader lightBlueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-//    Shader yellowDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-//    Shader pinkDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
 
     float boxVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -344,34 +337,42 @@ int main() {
     marioBoxShader.setInt("material.diffuse", 1);
     marioBoxShader.setInt("material.specular", 2);
 
-    // Brick box shader configuration
+    // brick box shader configuration
     brickBoxShader.use();
     brickBoxShader.setInt("material.ambient", 0);
     brickBoxShader.setInt("material.diffuse", 1);
     brickBoxShader.setInt("material.specular", 2);
     stbi_set_flip_vertically_on_load(false);
 
-    // load diamond textures
+    // diamond positions and textures
+    std::vector< std::pair<glm::vec3, unsigned int> > diamonds;
+
     unsigned int redDiamondTexture = loadTexture(
             FileSystem::getPath("resources/textures/diamonds/red-transparent.png").c_str());
-//    unsigned int blueDiamondTexture = loadTexture(
-//            FileSystem::getPath("resources/textures/diamonds/blue-transparent.png").c_str());
-//    unsigned int greenDiamondTexture = loadTexture(
-//            FileSystem::getPath("resources/textures/diamonds/green-transparent.png").c_str());
-//    unsigned int lightBlueDiamondTexture = loadTexture(
-//            FileSystem::getPath("resources/textures/diamonds/light-blue-transparent.png").c_str());
-//    unsigned int yellowDiamondTexture = loadTexture(
-//            FileSystem::getPath("resources/textures/diamonds/yellow-transparent.png").c_str());
-//    unsigned int pinkDiamondTexture = loadTexture(
-//            FileSystem::getPath("resources/textures/diamonds/pink-transparent.png").c_str());
+    diamonds.push_back({glm::vec3(-19.0f, -4.0f, 2.0f), redDiamondTexture});
 
-    redDiamondShader.use();
-    redDiamondShader.setInt("texture1", 0);
-//    blueDiamondShader.setInt("texture1", 0);
-//    greenDiamondShader.setInt("texture1", 0);
-//    lightBlueDiamondShader.setInt("texture1", 0);
-//    yellowDiamondShader.setInt("texture1", 0);
-//    pinkDiamondShader.setInt("texture1", 0);
+    unsigned int blueDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/blue-transparent.png").c_str());
+    diamonds.push_back({glm::vec3(-20.0f, -4.0f, 4.0f), blueDiamondTexture});
+
+    unsigned int greenDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/green-transparent.png").c_str());
+    diamonds.push_back({glm::vec3(-19.0f, -4.0f, 6.0f), greenDiamondTexture});
+
+    unsigned int lightBlueDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/light-blue-transparent.png").c_str());
+    diamonds.push_back({glm::vec3(-17.0f, -4.0f, 6.0f), lightBlueDiamondTexture});
+
+    unsigned int yellowDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/yellow-transparent.png").c_str());
+    diamonds.push_back({glm::vec3(-16.0f, -4.0f, 4.0f), yellowDiamondTexture});
+
+    unsigned int pinkDiamondTexture = loadTexture(
+            FileSystem::getPath("resources/textures/diamonds/pink-transparent.png").c_str());
+    diamonds.push_back({glm::vec3(-17.0f, -4.0f, 2.0f), pinkDiamondTexture});
+
+    diamondShader.use();
+    diamondShader.setInt("texture1", 0);
 
     // load models
     // -----------
@@ -388,8 +389,8 @@ int main() {
     Model shipModel("resources/objects/ship/FBRIPHH48VJVZ9GUIX3KK06PB.obj");
     shipModel.SetShaderTextureNamePrefix("material.");
 
-//    Model diamondModel("resources/objects/diamond/diamond.obj");
-//    diamondModel.SetShaderTextureNamePrefix("material.");
+    Model diamondModel("resources/objects/diamond/diamond.obj");
+    diamondModel.SetShaderTextureNamePrefix("material.");
 
     Model coinModel("resources/objects/coin/Coin.obj");
     coinModel.SetShaderTextureNamePrefix("material.");
@@ -436,14 +437,6 @@ int main() {
         glBindVertexArray(0);
     }
 
-    Model redDiamondModel("resources/objects/diamonds/red/diamond.obj");
-    redDiamondModel.SetShaderTextureNamePrefix("material.");
-
-//    Model greenDiamondModel("resources/objects/diamonds/green/diamond.obj");
-//    greenDiamondModel.SetShaderTextureNamePrefix("material.");
-
-//    Model blueDiamondModel("resources/objects/diamonds/blue/diamond.obj");
-//    blueDiamondModel.SetShaderTextureNamePrefix("material.");
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -461,9 +454,6 @@ int main() {
         // input
         // -----
         processInput(window);
-
-        //todo sortiranje providnih
-
 
         jumpCheck();
         mushroomCheck();
@@ -596,17 +586,28 @@ int main() {
 
 
         // diamonds
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, redDiamondTexture);
-        redDiamondShader.use();
-        redDiamondShader.setMat4("projection", projection);
-        redDiamondShader.setMat4("view", view);
-        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
-        modelRedDiamond = glm::translate(modelRedDiamond, glm::vec3(-10.0f, 2.0f, 0.0f));
-        //modelRedDiamond = glm::rotate(modelRedDiamond, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelRedDiamond = glm::scale(modelRedDiamond, glm::vec3(0.1f));
-        redDiamondShader.setMat4("model", modelRedDiamond);
-        redDiamondModel.Draw(redDiamondShader);
+
+        //      distance         translation   texture
+        std::map<float, std::pair<glm::vec3, unsigned int>> diamondsSorted;
+
+        for(std::pair<glm::vec3, unsigned int> diamond : diamonds){
+            float distance = glm::length(programState->camera.Position - diamond.first);
+            diamondsSorted[distance] = diamond;
+        }
+
+        for(auto diamond = diamondsSorted.rbegin(); diamond != diamondsSorted.rend(); diamond++){
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, diamond->second.second);
+            diamondShader.use();
+            diamondShader.setMat4("projection", projection);
+            diamondShader.setMat4("view", view);
+            glm::mat4 modelDiamond = glm::mat4(1.0f);
+            modelDiamond = glm::translate(modelDiamond, diamond->second.first);
+            modelDiamond = glm::rotate(modelDiamond, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+            modelDiamond = glm::scale(modelDiamond, glm::vec3(0.05f));
+            diamondShader.setMat4("model", modelDiamond);
+            diamondModel.Draw(diamondShader);
+        }
 
         glEnable(GL_CULL_FACE);
 
