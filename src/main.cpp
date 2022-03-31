@@ -343,9 +343,9 @@ int main() {
 
     // Brick box shader configuration
     brickBoxShader.use();
-    brickBoxShader.setInt("material.ambient", 3);
-    brickBoxShader.setInt("material.diffuse", 4);
-    brickBoxShader.setInt("material.specular", 5);
+    brickBoxShader.setInt("material.ambient", 0);
+    brickBoxShader.setInt("material.diffuse", 1);
+    brickBoxShader.setInt("material.specular", 2);
     stbi_set_flip_vertically_on_load(false);
 
     // load diamond textures
@@ -438,13 +438,13 @@ int main() {
 
         //brick box
         //bind brick ambient map
-        glActiveTexture(GL_TEXTURE3);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, brickambientMap);
         // bind specular map
-        glActiveTexture(GL_TEXTURE4);
+        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, brickdiffuseMap);
         // bind emission map
-        glActiveTexture(GL_TEXTURE5);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, brickspecularMap);
 
         //light setting
@@ -498,7 +498,7 @@ int main() {
         modelMarioBox = glm::translate(modelMarioBox, glm::vec3(-5.0f, -0.4f, 0.0f));
         modelMarioBox = glm::rotate(modelMarioBox, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         modelMarioBox = glm::scale(modelMarioBox, glm::vec3(1.0f));
-        brickBoxShader.setMat4("model", modelMarioBox);
+        marioBoxShader.setMat4("model", modelMarioBox);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         // diamonds
@@ -755,35 +755,35 @@ unsigned int loadCubemap(vector<std::string> faces)
     return textureID;
 }
 
-void setLights(Shader shaderName){
-    shaderName.setVec3("light.position", lightPos);
-    shaderName.setVec3("viewPos", programState->camera.Position);
+void setLights(Shader shader){
+    shader.setVec3("light.position", lightPos);
+    shader.setVec3("viewPos", programState->camera.Position);
 
     // directional light
-    shaderName.setVec3("dirLight.direction", 0.0f, -1.0, 0.0f);
-    shaderName.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-    shaderName.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-    shaderName.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+    shader.setVec3("dirLight.direction", 0.0f, -1.0, 0.0f);
+    shader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+    shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+    shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
     //pointlight properties
-    shaderName.setVec3("pointLights[0].position", lightPos);
-    shaderName.setVec3("pointLights[0].ambient", 0.1f, 0.1f, 0.1f);
-    shaderName.setVec3("pointLights[0].diffuse", 0.6f, 0.6f, 0.6f);
-    shaderName.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+    shader.setVec3("pointLights[0].position", lightPos);
+    shader.setVec3("pointLights[0].ambient", 0.1f, 0.1f, 0.1f);
+    shader.setVec3("pointLights[0].diffuse", 0.6f, 0.6f, 0.6f);
+    shader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
 
-    shaderName.setFloat("pointLights[0].constant", 1.0f);
-    shaderName.setFloat("pointLights[0].linear", 0.09f);
-    shaderName.setFloat("pointLights[0].quadratic", 0.032f);
+    shader.setFloat("pointLights[0].constant", 1.0f);
+    shader.setFloat("pointLights[0].linear", 0.09f);
+    shader.setFloat("pointLights[0].quadratic", 0.032f);
     // spotLight
-    shaderName.setVec3("spotLight.position", programState->camera.Position);
-    shaderName.setVec3("spotLight.direction", programState->camera.Front);
-    shaderName.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-    shaderName.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
-    shaderName.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-    shaderName.setFloat("spotLight.constant", 1.0f);
-    shaderName.setFloat("spotLight.linear", 0.09f);
-    shaderName.setFloat("spotLight.quadratic", 0.032f);
-    shaderName.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-    shaderName.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+    shader.setVec3("spotLight.position", programState->camera.Position);
+    shader.setVec3("spotLight.direction", programState->camera.Front);
+    shader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+    shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+    shader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+    shader.setFloat("spotLight.constant", 1.0f);
+    shader.setFloat("spotLight.linear", 0.09f);
+    shader.setFloat("spotLight.quadratic", 0.032f);
+    shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+    shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
 }
 
 unsigned int loadTexture(char const * path)
@@ -846,5 +846,4 @@ void mushroomCheck(){
             mushroomHeight -= 0.03;
     }
 }
-
 
