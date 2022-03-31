@@ -190,12 +190,13 @@ int main() {
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader brickBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
     Shader marioBoxShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-    Shader redDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-    Shader blueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-    Shader greenDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-    Shader lightBlueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-    Shader yellowDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-    Shader pinkDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+    Shader redDiamondShader("resources/shaders/testDiamondShader.vs", "resources/shaders/testDiamondShader.fs");
+    Shader coinShader("resources/shaders/coinInstancingShader.vs", "resources/shaders/coinInstancingShader.fs");
+//    Shader blueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+//    Shader greenDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+//    Shader lightBlueDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+//    Shader yellowDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+//    Shader pinkDiamondShader("resources/shaders/shader.vs", "resources/shaders/shader.fs");
 
     float boxVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -353,32 +354,30 @@ int main() {
     // load diamond textures
     unsigned int redDiamondTexture = loadTexture(
             FileSystem::getPath("resources/textures/diamonds/red-transparent.png").c_str());
-    unsigned int blueDiamondTexture = loadTexture(
-            FileSystem::getPath("resources/textures/diamonds/blue-transparent.png").c_str());
-    unsigned int greenDiamondTexture = loadTexture(
-            FileSystem::getPath("resources/textures/diamonds/green-transparent.png").c_str());
-    unsigned int lightBlueDiamondTexture = loadTexture(
-            FileSystem::getPath("resources/textures/diamonds/light-blue-transparent.png").c_str());
-    unsigned int yellowDiamondTexture = loadTexture(
-            FileSystem::getPath("resources/textures/diamonds/yellow-transparent.png").c_str());
-    unsigned int pinkDiamondTexture = loadTexture(
-            FileSystem::getPath("resources/textures/diamonds/pink-transparent.png").c_str());
+//    unsigned int blueDiamondTexture = loadTexture(
+//            FileSystem::getPath("resources/textures/diamonds/blue-transparent.png").c_str());
+//    unsigned int greenDiamondTexture = loadTexture(
+//            FileSystem::getPath("resources/textures/diamonds/green-transparent.png").c_str());
+//    unsigned int lightBlueDiamondTexture = loadTexture(
+//            FileSystem::getPath("resources/textures/diamonds/light-blue-transparent.png").c_str());
+//    unsigned int yellowDiamondTexture = loadTexture(
+//            FileSystem::getPath("resources/textures/diamonds/yellow-transparent.png").c_str());
+//    unsigned int pinkDiamondTexture = loadTexture(
+//            FileSystem::getPath("resources/textures/diamonds/pink-transparent.png").c_str());
 
+    redDiamondShader.use();
     redDiamondShader.setInt("texture1", 0);
-    blueDiamondShader.setInt("texture1", 0);
-    greenDiamondShader.setInt("texture1", 0);
-    lightBlueDiamondShader.setInt("texture1", 0);
-    yellowDiamondShader.setInt("texture1", 0);
-    pinkDiamondShader.setInt("texture1", 0);
+//    blueDiamondShader.setInt("texture1", 0);
+//    greenDiamondShader.setInt("texture1", 0);
+//    lightBlueDiamondShader.setInt("texture1", 0);
+//    yellowDiamondShader.setInt("texture1", 0);
+//    pinkDiamondShader.setInt("texture1", 0);
 
     // load models
     // -----------
 
     Model islandModel("resources/objects/island/EO0AAAMXQ0YGMC13XX7X56I3L.obj");
     islandModel.SetShaderTextureNamePrefix("material.");
-
-    Model coinModel("resources/objects/coin/Coin.obj");
-    coinModel.SetShaderTextureNamePrefix("material.");
 
     Model mushroomModel("resources/objects/mushroom/693sxrp8upr3.obj");
     mushroomModel.SetShaderTextureNamePrefix("material.");
@@ -389,12 +388,56 @@ int main() {
     Model shipModel("resources/objects/ship/FBRIPHH48VJVZ9GUIX3KK06PB.obj");
     shipModel.SetShaderTextureNamePrefix("material.");
 
-    Model diamondModel("resources/objects/diamond/diamond.obj");
-    diamondModel.SetShaderTextureNamePrefix("material.");
+//    Model diamondModel("resources/objects/diamond/diamond.obj");
+//    diamondModel.SetShaderTextureNamePrefix("material.");
 
-    // ugh
-//    Model redDiamondModel("resources/objects/diamonds/red/diamond.obj");
-//    redDiamondModel.SetShaderTextureNamePrefix("material.");
+    Model coinModel("resources/objects/coin/Coin.obj");
+    coinModel.SetShaderTextureNamePrefix("material.");
+
+    // instancing
+    unsigned int coinAmount = 10;
+    glm::mat4* modelMatrices;
+    modelMatrices = new glm::mat4[coinAmount];
+    float offset = 3.0f;
+
+    for (unsigned int i = 0; i < coinAmount; i++){
+        glm::mat4 modelCoin = glm::mat4(1.0f);
+
+        modelCoin = glm::translate(modelCoin, glm::vec3(0.0f + offset * i, 10.0f, 0.0f));
+        modelCoin = glm::rotate(modelCoin, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelCoin = glm::scale(modelCoin, glm::vec3(0.02f));
+
+        modelMatrices[i] = modelCoin;
+    }
+
+    unsigned int coinBuffer;
+    glGenBuffers(1, &coinBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, coinBuffer);
+    glBufferData(GL_ARRAY_BUFFER, coinAmount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+
+    for (unsigned int i = 0; i < coinModel.meshes.size(); i++){
+        unsigned int coinVAO = coinModel.meshes[i].VAO;
+        glBindVertexArray(coinVAO);
+
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+
+        glBindVertexArray(0);
+    }
+
+    Model redDiamondModel("resources/objects/diamonds/red/diamond.obj");
+    redDiamondModel.SetShaderTextureNamePrefix("material.");
 
 //    Model greenDiamondModel("resources/objects/diamonds/green/diamond.obj");
 //    greenDiamondModel.SetShaderTextureNamePrefix("material.");
@@ -436,115 +479,40 @@ int main() {
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
 
-        glDisable(GL_CULL_FACE);
-
-        //brick box
-        //bind brick ambient map
+        coinShader.use();
+        //setLights(coinShader);
+        //coinShader.setFloat("material.shininess", 128.0f);
+        coinShader.setMat4("projection", projection);
+        coinShader.setMat4("view", view);
+        coinShader.setInt("texture_diffuse1", 0);
+        //coinShader.setInt("texture_specular1", 1);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, brickambientMap);
-        // bind specular map
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, brickdiffuseMap);
-        // bind emission map
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, brickspecularMap);
+        glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[0].id);
 
-        //light setting
-        brickBoxShader.use();
-        setLights(brickBoxShader);
-        brickBoxShader.setFloat("material.shininess", 64.0f);
+        //glActiveTexture(GL_TEXTURE1);
+        //glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[1].id);
 
-        //brick box projection/view
-        brickBoxShader.setMat4("projection", projection);
-        brickBoxShader.setMat4("view", view);
-
-        glBindVertexArray(boxVAO);
-
-        for(int i = 0; i < 3; i++){
-            glm::mat4 modelBrickBox = glm::mat4(1.0f);
-            float boxTranslation = (float)i * 1.0f;
-
-            // make space for Mario box
-            if(i == 2)
-                boxTranslation += 1.0f;
-
-            modelBrickBox = glm::translate(modelBrickBox, glm::vec3(-5.0f, -0.4f, 2.0f - boxTranslation));
-            modelBrickBox = glm::rotate(modelBrickBox, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            modelBrickBox = glm::scale(modelBrickBox, glm::vec3(1.0f));
-
-            brickBoxShader.setMat4("model", modelBrickBox);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (unsigned int i = 0; i < coinModel.meshes.size(); i++)
+        {
+            glBindVertexArray(coinModel.meshes[i].VAO);
+            glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(
+                                        coinModel.meshes[i].indices.size()), GL_UNSIGNED_INT, 0, coinAmount);
+            glBindVertexArray(0);
         }
 
-        //mario box
-        //bind brick ambient map
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, questionambientMap);
-        // bind specular map
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, questiondiffuseMap);
-        // bind emission map
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, questionspecularMap);
 
-        marioBoxShader.use();
-        setLights(marioBoxShader);
-        marioBoxShader.setFloat("material.shininess", 64.0f);
-
-        //mario box projection/view
-        marioBoxShader.setMat4("projection", projection);
-        marioBoxShader.setMat4("view", view);
-
-        glBindVertexArray(boxVAO);
-        glm::mat4 modelMarioBox = glm::mat4(1.0f);
-        modelMarioBox = glm::translate(modelMarioBox, glm::vec3(-5.0f, -0.4f, 0.0f));
-        modelMarioBox = glm::rotate(modelMarioBox, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        modelMarioBox = glm::scale(modelMarioBox, glm::vec3(1.0f));
-        marioBoxShader.setMat4("model", modelMarioBox);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-
-        // diamonds
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, redDiamondTexture);
-        redDiamondShader.use();
-        redDiamondShader.setMat4("projection", projection);
-        redDiamondShader.setMat4("view", view);
-        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
-        modelRedDiamond = glm::translate(modelRedDiamond, glm::vec3(-10.0f, 2.0f, 0.0f));
-        //modelRedDiamond = glm::rotate(modelRedDiamond, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-        modelRedDiamond = glm::scale(modelRedDiamond, glm::vec3(0.1f));
-        redDiamondShader.setMat4("model", modelRedDiamond);
-        diamondModel.Draw(redDiamondShader);
-
-
-        glEnable(GL_CULL_FACE);
-
-        // don't forget to enable shader before setting uniforms
         ourShader.use();
         setLights(ourShader);
         ourShader.setFloat("material.shininess", 32.0f);
-        // view/projection transformations
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-
-
-
-
-        // render the loaded models
-
-        glm::mat4 modelIsland = glm::mat4(1.0f);
-        modelIsland = glm::translate(modelIsland, glm::vec3 (0.0f, 0.0f, 0.0f));
-        modelIsland = glm::scale(modelIsland, glm::vec3(10.0f));
-        ourShader.setMat4("model", modelIsland);
-        islandModel.Draw(ourShader);
-
-        glm::mat4 modelCoin = glm::mat4(1.0f);
-        modelCoin = glm::translate(modelCoin, glm::vec3 (-18.0f, 8.0f, 0.0f));
-        modelCoin = glm::scale(modelCoin, glm::vec3(0.02f));
-        modelCoin = glm::rotate(modelCoin, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-        ourShader.setMat4("model", modelCoin);
-        coinModel.Draw(ourShader);
+//        glm::mat4 modelCoin = glm::mat4(1.0f);
+//        modelCoin = glm::translate(modelCoin, glm::vec3 (-18.0f, 8.0f, 0.0f));
+//        modelCoin = glm::scale(modelCoin, glm::vec3(0.02f));
+//        modelCoin = glm::rotate(modelCoin, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+//        ourShader.setMat4("model", modelCoin);
+//        coinModel.Draw(ourShader);
 
         glm::mat4 modelMushroom = glm::mat4(1.0f);
         modelMushroom = glm::translate(modelMushroom, glm::vec3(-5.0f, -0.3f + mushroomHeight, 0.0f));
@@ -565,30 +533,82 @@ int main() {
         ourShader.setMat4("model", modelShip);
         shipModel.Draw(ourShader);
 
-//        glDisable(GL_CULL_FACE);
+        glDisable(GL_CULL_FACE);
 
-//        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
-//        modelRedDiamond = glm::translate(modelRedDiamond, glm::vec3(-18.0f, 0.0f, 13.0f));
-//        modelRedDiamond = glm::scale(modelRedDiamond, glm::vec3(0.1f));
-//        ourShader.setMat4("model", modelRedDiamond);
-//        redDiamondModel.Draw(ourShader);
+        glm::mat4 modelIsland = glm::mat4(1.0f);
+        modelIsland = glm::translate(modelIsland, glm::vec3 (0.0f, 0.0f, 0.0f));
+        modelIsland = glm::scale(modelIsland, glm::vec3(10.0f));
+        ourShader.setMat4("model", modelIsland);
+        islandModel.Draw(ourShader);
 
-//        glm::mat4 modelGreenDiamond = glm::mat4(1.0f);
-//        modelGreenDiamond = glm::translate(modelGreenDiamond, glm::vec3(-18.0f, 0.0f, 9.0f));
-//        modelGreenDiamond = glm::scale(modelGreenDiamond, glm::vec3(0.1f));
-//        ourShader.setMat4("model", modelGreenDiamond);
-//        greenDiamondModel.Draw(ourShader);
+        //brick box
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, brickambientMap);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, brickdiffuseMap);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, brickspecularMap);
 
-//        glm::mat4 modelBlueDiamond = glm::mat4(1.0f);
-//        modelBlueDiamond = glm::translate(modelBlueDiamond, glm::vec3(-18.0f, 0.0f, 5.0f));
-//        modelBlueDiamond = glm::scale(modelBlueDiamond, glm::vec3(0.1f));
-//        ourShader.setMat4("model", modelBlueDiamond);
-//        blueDiamondModel.Draw(ourShader);
+        brickBoxShader.use();
+        setLights(brickBoxShader);
+        brickBoxShader.setFloat("material.shininess", 32.0f);
+        brickBoxShader.setMat4("projection", projection);
+        brickBoxShader.setMat4("view", view);
+
+        glBindVertexArray(boxVAO);
+        for(int i = 0; i < 3; i++){
+            glm::mat4 modelBrickBox = glm::mat4(1.0f);
+            float boxTranslation = (float)i * 1.0f;
+
+            // make space for Mario box
+            if(i == 2)
+                boxTranslation += 1.0f;
+
+            modelBrickBox = glm::translate(modelBrickBox, glm::vec3(-5.0f, -0.4f, 2.0f - boxTranslation));
+            modelBrickBox = glm::rotate(modelBrickBox, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            modelBrickBox = glm::scale(modelBrickBox, glm::vec3(1.0f));
+
+            brickBoxShader.setMat4("model", modelBrickBox);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
+        //mario box
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, questionambientMap);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, questiondiffuseMap);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, questionspecularMap);
+
+        marioBoxShader.use();
+        setLights(marioBoxShader);
+        marioBoxShader.setFloat("material.shininess", 16.0f);
+        marioBoxShader.setMat4("projection", projection);
+        marioBoxShader.setMat4("view", view);
+
+        glBindVertexArray(boxVAO);
+        glm::mat4 modelMarioBox = glm::mat4(1.0f);
+        modelMarioBox = glm::translate(modelMarioBox, glm::vec3(-5.0f, -0.4f, 0.0f));
+        modelMarioBox = glm::rotate(modelMarioBox, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        modelMarioBox = glm::scale(modelMarioBox, glm::vec3(1.0f));
+        marioBoxShader.setMat4("model", modelMarioBox);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
 
+        // diamonds
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, redDiamondTexture);
+        redDiamondShader.use();
+        redDiamondShader.setMat4("projection", projection);
+        redDiamondShader.setMat4("view", view);
+        glm::mat4 modelRedDiamond = glm::mat4(1.0f);
+        modelRedDiamond = glm::translate(modelRedDiamond, glm::vec3(-10.0f, 2.0f, 0.0f));
+        //modelRedDiamond = glm::rotate(modelRedDiamond, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelRedDiamond = glm::scale(modelRedDiamond, glm::vec3(0.1f));
+        redDiamondShader.setMat4("model", modelRedDiamond);
+        redDiamondModel.Draw(redDiamondShader);
 
-//        glEnable(GL_CULL_FACE);
-
+        glEnable(GL_CULL_FACE);
 
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
@@ -811,8 +831,9 @@ unsigned int loadTexture(char const * path)
             format = GL_RED;
         else if (nrComponents == 3)
             format = GL_RGB;
-        else if (nrComponents == 4)
+        else
             format = GL_RGBA;
+
 
         glBindTexture(GL_TEXTURE_2D, textureID);
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
