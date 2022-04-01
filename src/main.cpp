@@ -476,17 +476,17 @@ int main() {
         glm::mat4 view = programState->camera.GetViewMatrix();
 
         coinShader.use();
-        //setLights(coinShader);
-        //coinShader.setFloat("material.shininess", 128.0f);
+        setLights(coinShader);
+        coinShader.setFloat("material.shininess", 128.0f);
         coinShader.setMat4("projection", projection);
         coinShader.setMat4("view", view);
         coinShader.setInt("texture_diffuse1", 0);
-        //coinShader.setInt("texture_specular1", 1);
+        coinShader.setInt("texture_specular1", 1);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[0].id);
 
-        //glActiveTexture(GL_TEXTURE1);
-        //glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[1].id);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[1].id);
 
         // instancing
         for (unsigned int i = 0; i < coinModel.meshes.size(); i++)
@@ -579,7 +579,7 @@ int main() {
 
         marioBoxShader.use();
         setLights(marioBoxShader);
-        marioBoxShader.setFloat("material.shininess", 16.0f);
+        marioBoxShader.setFloat("material.shininess", 32.0f);
         marioBoxShader.setMat4("projection", projection);
         marioBoxShader.setMat4("view", view);
 
