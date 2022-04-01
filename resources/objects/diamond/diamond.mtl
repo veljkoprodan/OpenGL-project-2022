@@ -10,4 +10,4 @@ newmtl mat1
 	illum 2
 	Ks 0.80000001192092896 0.80000001192092896 0.80000001192092896
 	Ns 6.25
-	map_Kd red-transparent.png
+

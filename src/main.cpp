@@ -36,13 +36,26 @@ unsigned int loadCubemap(vector<std::string> faces);
 
 unsigned int loadTexture(char const * path);
 
+void checkMarioColor();
+
+bool isOnPoint(float x, float z, float delta);
+
 bool spotlightOn = false;
+
+
+
+// Mario color
+enum enumMarioColor {red, green, blue, lightblue, yellow, pink};
+enumMarioColor marioColor = red;
 
 // Mario jump
 bool jump = false;
 float jumpSpeed = 0.1;
 float currentJumpHeight = 0;
 float jumpLimit = 1.7f;
+
+// Mario position
+glm::vec3 marioPosition = glm::vec3(-5.0f, -3.0f, 0.2f);
 
 // mushroom
 bool mushroomVisible = false;
@@ -374,6 +387,25 @@ int main() {
     diamondShader.use();
     diamondShader.setInt("texture1", 0);
 
+
+    // Mario textures
+    unsigned int marioTextureDefault = loadTexture(
+                FileSystem::getPath("resources/textures/mario/default.jpg").c_str());
+    unsigned int marioTextureGreen = loadTexture(
+                FileSystem::getPath("resources/textures/mario/green.jpg").c_str());
+    unsigned int marioTextureBlue = loadTexture(
+                FileSystem::getPath("resources/textures/mario/blue.jpg").c_str());
+    unsigned int marioTextureLightblue = loadTexture(
+                FileSystem::getPath("resources/textures/mario/lightblue.jpg").c_str());
+    unsigned int marioTextureYellow = loadTexture(
+                FileSystem::getPath("resources/textures/mario/yellow.jpg").c_str());
+    unsigned int marioTexturePink = loadTexture(
+                FileSystem::getPath("resources/textures/mario/pink.jpg").c_str());
+
+    ourShader.use();
+    ourShader.setInt("texture1", 0);
+
+
     // load models
     // -----------
 
@@ -463,7 +495,7 @@ int main() {
 
         jumpCheck();
         mushroomCheck();
-
+        checkMarioColor();
 
         // render
         // ------
@@ -504,13 +536,6 @@ int main() {
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-//        glm::mat4 modelCoin = glm::mat4(1.0f);
-//        modelCoin = glm::translate(modelCoin, glm::vec3 (-18.0f, 8.0f, 0.0f));
-//        modelCoin = glm::scale(modelCoin, glm::vec3(0.02f));
-//        modelCoin = glm::rotate(modelCoin, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-//        ourShader.setMat4("model", modelCoin);
-//        coinModel.Draw(ourShader);
-
         glm::mat4 modelMushroom = glm::mat4(1.0f);
         modelMushroom = glm::translate(modelMushroom, glm::vec3(-5.0f, -0.3f + mushroomHeight, 0.0f));
         modelMushroom = glm::rotate(modelMushroom, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -518,11 +543,11 @@ int main() {
         ourShader.setMat4("model", modelMushroom);
         mushroomModel.Draw(ourShader);
 
-        glm::mat4 modelMario = glm::mat4(1.0f);
-        modelMario = glm::translate(modelMario, glm::vec3(-5.0f, -3.0f + currentJumpHeight, 0.2f));
-        modelMario = glm::scale(modelMario, glm::vec3(0.4f));
-        ourShader.setMat4("model", modelMario);
-        marioModel.Draw(ourShader);
+//        glm::mat4 modelMario = glm::mat4(1.0f);
+//        modelMario = glm::translate(modelMario, glm::vec3(-5.0f, -3.0f + currentJumpHeight, 0.2f));
+//        modelMario = glm::scale(modelMario, glm::vec3(0.4f));
+//        ourShader.setMat4("model", modelMario);
+//        marioModel.Draw(ourShader);
 
         glm::mat4 modelShip = glm::mat4(1.0f);
         modelShip = glm::translate(modelShip, glm::vec3(-18.0f, 0.0f, 0.0f));
@@ -537,6 +562,35 @@ int main() {
         modelIsland = glm::scale(modelIsland, glm::vec3(10.0f));
         ourShader.setMat4("model", modelIsland);
         islandModel.Draw(ourShader);
+
+
+        // Mario
+        glActiveTexture(GL_TEXTURE0);
+
+        if(marioColor == red)
+            glBindTexture(GL_TEXTURE_2D, marioTextureDefault);
+        else if(marioColor == green)
+            glBindTexture(GL_TEXTURE_2D, marioTextureGreen);
+        else if(marioColor == blue)
+            glBindTexture(GL_TEXTURE_2D, marioTextureBlue);
+        else if(marioColor == lightblue)
+            glBindTexture(GL_TEXTURE_2D, marioTextureLightblue);
+        else if(marioColor == yellow)
+            glBindTexture(GL_TEXTURE_2D, marioTextureYellow);
+        else if(marioColor == pink)
+            glBindTexture(GL_TEXTURE_2D, marioTexturePink);
+
+        ourShader.use();
+        setLights(ourShader);
+        ourShader.setFloat("material.shininess", 32.0f);
+        ourShader.setMat4("projection", projection);
+        ourShader.setMat4("view", view);
+
+        glm::mat4 modelMario = glm::mat4(1.0f);
+        modelMario = glm::translate(modelMario, marioPosition);
+        modelMario = glm::scale(modelMario, glm::vec3(0.4f));
+        ourShader.setMat4("model", modelMario);
+        marioModel.Draw(ourShader);
 
         //brick box
         glActiveTexture(GL_TEXTURE0);
@@ -667,6 +721,15 @@ void processInput(GLFWwindow *window) {
         programState->camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        marioPosition.z -= 0.2;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        marioPosition.z += 0.2;
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        marioPosition.x += 0.2;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        marioPosition.x -= 0.2;
 
 }
 
@@ -864,16 +927,41 @@ unsigned int loadTexture(char const * path)
 }
 
 void jumpCheck(){
-    if(jump)
+    if(jump){
         currentJumpHeight += jumpSpeed;
+        marioPosition.y += jumpSpeed;
+    }
 
     if(currentJumpHeight >= jumpLimit){
         jump = false;
-        mushroomVisible = true;
+        if(isOnPoint(-5.0f, 0.0f, 0.5f))
+            mushroomVisible = true;
     }
 
-    if(jump == false && currentJumpHeight > 0)
+    if(jump == false && currentJumpHeight > 0){
         currentJumpHeight -= jumpSpeed;
+        marioPosition.y -= jumpSpeed;
+    }
+}
+
+void checkMarioColor(){
+    if(isOnPoint(-19.0f, 2.0f, 0.6f))
+        marioColor = red;
+    else if(isOnPoint(-20.0f, 4.0f, 0.6f))
+        marioColor = blue;
+    else if(isOnPoint(-19.0f, 6.0f, 0.6f))
+        marioColor = green;
+    else if(isOnPoint(-17.0f, 6.0f, 0.6f))
+        marioColor = lightblue;
+    else if(isOnPoint(-16.0f, 4.0f, 0.6f))
+        marioColor = yellow;
+    else if(isOnPoint(-17.0f, 2.0f, 0.6f))
+        marioColor = pink;
+}
+
+bool isOnPoint(float x, float z, float delta){
+    return(marioPosition.x > x-delta && marioPosition.x < x+delta
+           && marioPosition.z > z-delta && marioPosition.z < z + delta);
 }
 
 void mushroomCheck(){
