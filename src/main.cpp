@@ -1,4 +1,4 @@
-#include "imgui.h"
+﻿#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
@@ -56,6 +56,10 @@ float jumpLimit = 1.7f;
 
 // Mario position
 glm::vec3 marioPosition = glm::vec3(-5.0f, -3.0f, 0.2f);
+
+// Mario movement
+float marioAngle = 180.0f;
+float marioSpeed = 0.15f;
 
 // mushroom
 bool mushroomVisible = false;
@@ -588,6 +592,7 @@ int main() {
 
         glm::mat4 modelMario = glm::mat4(1.0f);
         modelMario = glm::translate(modelMario, marioPosition);
+        modelMario = glm::rotate(modelMario, glm::radians(marioAngle - 180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         modelMario = glm::scale(modelMario, glm::vec3(0.4f));
         ourShader.setMat4("model", modelMario);
         marioModel.Draw(ourShader);
@@ -722,15 +727,25 @@ void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        marioPosition.z -= 0.2;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        marioPosition.z += 0.2;
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        marioPosition.x += 0.2;
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        marioPosition.x -= 0.2;
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+        marioAngle += 2.0f;
+        if(marioAngle >= 360.0f)
+            marioAngle -= 360.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+        marioAngle -= 2.0f;
+        if(marioAngle <= -360.0f)
+            marioAngle += 360.0f;
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS){
+        marioPosition.x += marioSpeed * (float)sin(glm::radians(marioAngle));
+        marioPosition.z += marioSpeed * (float)cos(glm::radians(marioAngle));
+    }
 
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS){
+        marioPosition.x -= marioSpeed * (float)sin(glm::radians(marioAngle));
+        marioPosition.z -= marioSpeed * (float)cos(glm::radians(marioAngle));
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -974,4 +989,3 @@ void mushroomCheck(){
             mushroomHeight -= 0.03;
     }
 }
-
