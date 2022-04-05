@@ -46,8 +46,6 @@ bool isOnPoint(float x, float z, float delta);
 
 bool spotlightOn = false;
 
-
-
 // Mario color
 enum enumMarioColor {red, green, blue, lightblue, yellow, pink};
 enumMarioColor marioColor = red;
@@ -73,6 +71,8 @@ float mushroomHeight = 0;
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 bool bloom = true;
+bool hdr = true;
+bool effect = false;
 float exposure = 1.0f;
 
 // camera
@@ -86,7 +86,7 @@ float lastFrame = 0.0f;
 
 //lightPos
 glm::vec3 lightPos(-4.0f, 2.4f, 2.0f);
-glm::vec3 roomLightPosition(0.0f,  -2.7f, 25.5f);
+glm::vec3 roomLightPosition(0.0f,  117.3f, 25.5f);
 glm::vec3 roomLightColor(50.0f, 50.0f, 50.0f);
 
 struct ProgramState {
@@ -219,6 +219,7 @@ int main() {
     Shader roomShader("resources/shaders/room.vs", "resources/shaders/room.fs");
     Shader blurShader("resources/shaders/blur.vs", "resources/shaders/blur.fs");
     Shader bloomShader("resources/shaders/bloom.vs", "resources/shaders/bloom.fs");
+    Shader effectShader("resources/shaders/effect.vs", "resources/shaders/effect.fs");
 
     float boxVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -423,6 +424,21 @@ int main() {
     bloomShader.use();
     bloomShader.setInt("scene", 0);
     bloomShader.setInt("bloomBlur", 1);
+
+    unsigned int effectFBO;
+    unsigned int effectColorBuffer;
+    glGenFramebuffers(1, &effectFBO);
+    glGenTextures(1, &effectColorBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, effectFBO);
+    glBindTexture(GL_TEXTURE_2D, effectColorBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, effectColorBuffer, 0);
+    effectShader.use();
+    effectShader.setInt("effectTexture", 0);
 
     // Mario cube shader configuration
     marioBoxShader.use();
@@ -655,7 +671,7 @@ int main() {
         pipeModel.Draw(ourShader);
 
         modelPipe = glm::mat4(1.0f);
-        modelPipe = glm::translate(modelPipe, glm::vec3( -1.0f,  -3.5f, 26.5f)); // translate it down so it's at the center of the scene
+        modelPipe = glm::translate(modelPipe, glm::vec3( -1.0f,  116.5f, 26.5f)); // translate it down so it's at the center of the scene
         modelPipe = glm::scale(modelPipe, glm::vec3(0.5f, 0.5f, 0.5f));	// it's a bit too big for our scene, so scale it down
         ourShader.setMat4("model", modelPipe);
         pipeModel.Draw(ourShader);
@@ -684,7 +700,7 @@ int main() {
         starShader.setVec3("lightColor", roomLightColor);
 
         glm::mat4 modelStar = glm::mat4(1.0f);
-        modelStar = glm::translate(modelStar, glm::vec3(0.0f,-5.0f,28.0f)); // translate it down so it's at the center of the scene
+        modelStar = glm::translate(modelStar, glm::vec3(0.0f,115.0f,28.0f)); // translate it down so it's at the center of the scene
         //model = glm::rotate(model,(float)glfwGetTime(), glm::vec3(0.0f,1.0f,0.0f));
         modelStar = glm::scale(modelStar, glm::vec3(5.0f, 5.0f, 5.0f));	// it's a bit too big for our scene, so scale it down
         starShader.setMat4("model", modelStar);
@@ -716,7 +732,7 @@ int main() {
         roomShader.setMat4("projection", projection);
         roomShader.setMat4("view", view);
         glm::mat4 modelRoom = glm::mat4(1.0f);
-        modelRoom = glm::translate(modelRoom, glm::vec3(0.0f, 0.0f, 25.0));
+        modelRoom = glm::translate(modelRoom, glm::vec3(0.0f, 120.0f, 25.0));
         modelRoom = glm::scale(modelRoom, glm::vec3(5.5f, 3.5f, 5.5f));
         roomShader.setMat4("model", modelRoom);
         renderCube();
@@ -837,7 +853,7 @@ int main() {
             if (first_iteration)
                 first_iteration = false;
         }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, effectFBO);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         bloomShader.use();
@@ -845,8 +861,19 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
+        bloomShader.setInt("hdr", hdr);
         bloomShader.setInt("bloom", bloom);
         bloomShader.setFloat("exposure", exposure);
+        renderQuad();
+
+        //effect
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        effectShader.use();
+        effectShader.setBool("effect", effect);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, effectColorBuffer);
+
         renderQuad();
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -992,6 +1019,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
     if(key == GLFW_KEY_1 && action == GLFW_PRESS)
         bloom = !bloom;
+
+    if(key == GLFW_KEY_2 && action == GLFW_PRESS)
+        hdr = !hdr;
+
+    if(key == GLFW_KEY_3 && action == GLFW_PRESS)
+        effect = !effect;
 }
 
 unsigned int quadVAO = 0;
@@ -1131,7 +1164,7 @@ void setLights(Shader shader){
     shader.setVec3("viewPos", programState->camera.Position);
 
     // directional light
-    shader.setVec3("dirLight.direction", 1.0f, -1.0, 0.0f);
+    shader.setVec3("dirLight.direction", 0.0f, -1.0, 0.0f);
     shader.setVec3("dirLight.ambient", 0.01f, 0.01f, 0.01f);
     shader.setVec3("dirLight.diffuse", 0.08f, 0.08f, 0.08f);
     shader.setVec3("dirLight.specular", 0.1f, 0.1f, 0.1f);
