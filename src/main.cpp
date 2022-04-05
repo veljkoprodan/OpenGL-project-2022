@@ -431,6 +431,9 @@ int main() {
     Model coinModel("resources/objects/coin/Coin.obj");
     coinModel.SetShaderTextureNamePrefix("material.");
 
+    Model pipeModel("resources/objects/pipe/pipe.obj");
+    pipeModel.SetShaderTextureNamePrefix("material.");
+
     // instancing
     unsigned int coinAmount = 10;
     glm::mat4* modelMatrices;
@@ -547,12 +550,6 @@ int main() {
         ourShader.setMat4("model", modelMushroom);
         mushroomModel.Draw(ourShader);
 
-//        glm::mat4 modelMario = glm::mat4(1.0f);
-//        modelMario = glm::translate(modelMario, glm::vec3(-5.0f, -3.0f + currentJumpHeight, 0.2f));
-//        modelMario = glm::scale(modelMario, glm::vec3(0.4f));
-//        ourShader.setMat4("model", modelMario);
-//        marioModel.Draw(ourShader);
-
         glm::mat4 modelShip = glm::mat4(1.0f);
         modelShip = glm::translate(modelShip, glm::vec3(-18.0f, 0.0f, 0.0f));
         modelShip = glm::scale(modelShip, glm::vec3(10.0f));
@@ -566,6 +563,12 @@ int main() {
         modelIsland = glm::scale(modelIsland, glm::vec3(10.0f));
         ourShader.setMat4("model", modelIsland);
         islandModel.Draw(ourShader);
+
+        glm::mat4 modelPipe = glm::mat4(1.0f);
+        modelPipe = glm::translate(modelPipe, glm::vec3(-5.9f, -3.6f, -3.0f));
+        modelPipe = glm::scale(modelPipe, glm::vec3(0.5f));
+        ourShader.setMat4("model", modelPipe);
+        pipeModel.Draw(ourShader);
 
 
         // Mario
@@ -872,7 +875,7 @@ void setLights(Shader shader){
     shader.setVec3("viewPos", programState->camera.Position);
 
     // directional light
-    shader.setVec3("dirLight.direction", 0.0f, -1.0, 0.0f);
+    shader.setVec3("dirLight.direction", 1.0f, -1.0, 0.0f);
     shader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
     shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
     shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
