@@ -56,6 +56,10 @@ float jumpSpeed = 0.1;
 float currentJumpHeight = 0;
 float jumpLimit = 1.7f;
 
+//choose character
+bool mario = true;
+bool ghost = false;
+
 // Mario position
 glm::vec3 marioPosition = glm::vec3(-5.0f, -3.0f, 0.2f);
 
@@ -533,6 +537,9 @@ int main() {
     Model starModel("resources/objects/star/star.obj");
     coinModel.SetShaderTextureNamePrefix("material.");
 
+    Model ghostModel("resources/objects/ghost/dzgtepw5cv4k.obj");
+    ghostModel.SetShaderTextureNamePrefix("material.");
+
     // instancing
     unsigned int coinAmount = 10;
     glm::mat4* modelMatrices;
@@ -612,7 +619,7 @@ int main() {
 
         if(isOnPoint(2.5f, 22.0f, 0.6f) && isStarCatched){
             marioPosition = glm::vec3 (-5.0f, -3.0f, 0.2f);
-            programState->camera.Position = glm::vec3(-5.9f, -3.6f, -3.0f);
+            programState->camera.Position = glm::vec3(-5.9f, 0.6f, -3.0f);
             isStarCatched = false;
         }
 
@@ -718,24 +725,31 @@ int main() {
 
         glm::mat4 modelStar = glm::mat4(1.0f);
         modelStar = glm::translate(modelStar, glm::vec3(0.0f,115.0f,28.0f)); // translate it down so it's at the center of the scene
-        modelStar = glm::rotate(modelStar,(float)glfwGetTime(), glm::vec3(0.0f,1.0f,0.0f));
+        //modelStar = glm::rotate(modelStar,(float)glfwGetTime(), glm::vec3(0.0f,1.0f,0.0f));
         modelStar = glm::scale(modelStar, glm::vec3(5.0f, 5.0f, 5.0f));	// it's a bit too big for our scene, so scale it down
         starShader.setMat4("model", modelStar);
         if(!isStarCatched)
             starModel.Draw(ourShader);
 
         ourShader.use();
-        setLights(ourShader);
-        ourShader.setFloat("material.shininess", 32.0f);
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
 
+        //mario rendering
         glm::mat4 modelMario = glm::mat4(1.0f);
         modelMario = glm::translate(modelMario, marioPosition);
         modelMario = glm::rotate(modelMario, glm::radians(marioAngle - 180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         modelMario = glm::scale(modelMario, glm::vec3(0.4f));
         ourShader.setMat4("model", modelMario);
-        marioModel.Draw(ourShader);
+        if(mario)
+            marioModel.Draw(ourShader);
+
+        //ghost rendering
+        modelMushroom = glm::mat4(1.0f);
+        modelMushroom = glm::translate(modelMushroom, marioPosition);
+        modelMushroom = glm::rotate(modelMushroom, glm::radians(marioAngle), glm::vec3(0.0f, 1.0f, 0.0f));
+        modelMushroom = glm::scale(modelMushroom, glm::vec3(0.003f));
+        ourShader.setMat4("model", modelMushroom);
+        if(ghost)
+            ghostModel.Draw(ourShader);
 
         //room rendering
         glActiveTexture(GL_TEXTURE0);
@@ -1043,6 +1057,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 
     if(key == GLFW_KEY_3 && action == GLFW_PRESS)
         effect = !effect;
+
+    if(key == GLFW_KEY_C && action == GLFW_PRESS){
+        mario = !mario;
+        ghost = !ghost;
+    }
+
 }
 
 unsigned int quadVAO = 0;
