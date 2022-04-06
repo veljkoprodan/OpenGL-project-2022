@@ -59,6 +59,10 @@ float jumpLimit = 1.7f;
 // Mario position
 glm::vec3 marioPosition = glm::vec3(-5.0f, -3.0f, 0.2f);
 
+//star catching
+bool isStarCatched = false;
+void catchStar();
+
 // Mario movement
 float marioAngle = 180.0f;
 float marioSpeed = 0.15f;
@@ -598,6 +602,19 @@ int main() {
         jumpCheck();
         mushroomCheck();
         checkMarioColor();
+        catchStar();
+
+        //teleport to room and back
+        if(isOnPoint(-1.6f,-8.2f, 0.6f)){
+            marioPosition = glm::vec3 (2.5f, 117.5f, 22.0f);
+            programState->camera.Position = glm::vec3(-1.4f, 123.5f,26.5f);
+        }
+
+        if(isOnPoint(2.5f, 22.0f, 0.6f) && isStarCatched){
+            marioPosition = glm::vec3 (-5.0f, -3.0f, 0.2f);
+            programState->camera.Position = glm::vec3(-5.9f, -3.6f, -3.0f);
+            isStarCatched = false;
+        }
 
         // render
         // ------
@@ -1288,4 +1305,9 @@ void mushroomCheck(){
         if(mushroomHeight > 0)
             mushroomHeight -= 0.03;
     }
+}
+
+void catchStar(){
+    if(isOnPoint(0.0f, 25.0f, 0.5f))
+        isStarCatched = true;
 }
