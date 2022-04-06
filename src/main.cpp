@@ -718,10 +718,11 @@ int main() {
 
         glm::mat4 modelStar = glm::mat4(1.0f);
         modelStar = glm::translate(modelStar, glm::vec3(0.0f,115.0f,28.0f)); // translate it down so it's at the center of the scene
-        //model = glm::rotate(model,(float)glfwGetTime(), glm::vec3(0.0f,1.0f,0.0f));
+        modelStar = glm::rotate(modelStar,(float)glfwGetTime(), glm::vec3(0.0f,1.0f,0.0f));
         modelStar = glm::scale(modelStar, glm::vec3(5.0f, 5.0f, 5.0f));	// it's a bit too big for our scene, so scale it down
         starShader.setMat4("model", modelStar);
-        starModel.Draw(ourShader);
+        if(!isStarCatched)
+            starModel.Draw(ourShader);
 
         ourShader.use();
         setLights(ourShader);
