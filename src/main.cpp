@@ -1,4 +1,4 @@
-#include "imgui.h"
+﻿#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
@@ -40,6 +40,8 @@ void renderRoomPipe(Shader &shader, Model &marioModel);
 void renderPipe(Shader& shader, Model &pipeModel);
 void renderStar(Shader& shader, Model &starModel);
 void renderYellowStar(Shader &shader, Model &yellowStarModel);
+void renderBlueStar(Shader &shader, Model &blueStarModel);
+void renderRedStar(Shader &shader, Model &redStarModel);
 void renderIsland(Shader& shader, Model &islandModel);
 void renderShip(Shader& shader, Model &shipModel);
 void renderMushroom(Shader& shader, Model &mushroomModel);
@@ -74,8 +76,12 @@ bool inside = false;
 // Did character catch the star
 void starCheck();
 void yellowStarCheck();
+void redStarCheck();
+void blueStarCheck();
 bool starCatched = false;
 bool yellowStarCatched = false;
+bool redStarCatched = false;
+bool blueStarCatched = false;
 
 // Character movement
 bool isOnPoint(float x, float z, float delta);
@@ -606,6 +612,12 @@ int main() {
     Model yellowStarModel("resources/objects/marioStar/star.obj");
     yellowStarModel.SetShaderTextureNamePrefix("material.");
 
+    Model redStarModel("resources/objects/redStar/star.obj");
+    redStarModel.SetShaderTextureNamePrefix("material.");
+
+    Model blueStarModel("resources/objects/blueStar/star.obj");
+    blueStarModel.SetShaderTextureNamePrefix("material.");
+
     // Instancing
     //----------------------------------------------------------
     unsigned int coinAmount = 10;
@@ -764,7 +776,14 @@ int main() {
         }
         else if(currentCharacter == ghost){
             renderGhost(ourShader, ghostModel);
+            redStarCheck();
+            blueStarCheck();
         }
+
+
+// Render models outside of the hidden room
+//-----------------------------------------------------------------
+if(!inside){
 
         // Coin rendering (instancing)
         //----------------------------------------------------------
@@ -809,6 +828,12 @@ int main() {
         renderIsland(ourShader, islandModel);
         if(!yellowStarCatched)
             renderYellowStar(ourShader, yellowStarModel);
+
+        if(!blueStarCatched)
+            renderBlueStar(ourShader, blueStarModel);
+
+        if(!redStarCatched)
+            renderRedStar(ourShader, redStarModel);
 
 
         // Box rendering
@@ -931,6 +956,10 @@ int main() {
             }
         }
 
+// Render the hidden room
+//------------------------------------------------------------------
+}else if(inside){
+
         glDisable(GL_CULL_FACE);
 
         // Hidden room rendering
@@ -971,6 +1000,7 @@ int main() {
             renderStar(starShader, starModel);
 
         glEnable(GL_CULL_FACE);
+}
 
 
         // Draw skybox as last
@@ -1482,12 +1512,14 @@ unsigned int loadTexture(char const * path, bool gammaCorrection)
 
 void jumpCheck(){
     if(jump){
+        characterSpeed = 0.2f;
         currentJumpHeight += jumpSpeed;
         characterPosition.y += jumpSpeed;
     }
 
     if(currentJumpHeight >= jumpLimit){
         jump = false;
+        characterSpeed = 0.07f;
         if(isOnPoint(-5.0f, 0.0f, 0.5f))
             mushroomVisible = true;
     }
@@ -1541,6 +1573,16 @@ void yellowStarCheck(){
 
     if(angle >= 88.5f && angle <= 91.5f)
         yellowStarCatched = true;
+}
+
+void redStarCheck(){
+    if(isOnPoint(-18.07f, -0.85f, 0.6f) && characterPosition.y >= 11.8f && characterPosition.y <= 13.3f)
+        redStarCatched = true;
+}
+
+void blueStarCheck(){
+    if(isOnPoint(2.68f, 3.12f, 0.6f) && characterPosition.y >= -1.7f && characterPosition.y <= -1.2f)
+        blueStarCatched = true;
 }
 
 void boxCheck(){
@@ -1670,6 +1712,24 @@ void renderYellowStar(Shader &shader, Model &yellowStarModel){
     yellowStarModel.Draw(shader);
 }
 
+void renderBlueStar(Shader &shader, Model &blueStarModel){
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(5.0f, -3.0f, 3.0f));
+    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(4.0f));
+    shader.setMat4("model", model);
+    blueStarModel.Draw(shader);
+}
+
+void renderRedStar(Shader &shader, Model &redStarModel){
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-14.5f, 10.0f, -0.8f));
+    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(6.0f));
+    shader.setMat4("model", model);
+    redStarModel.Draw(shader);
+}
+
 void renderRoomScene(Shader &shader){
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(20.0f, 0.0f, 0.0f));
@@ -1700,4 +1760,3 @@ double constrainAngle(float x){
         x += 360;
     return x;
 }
-
