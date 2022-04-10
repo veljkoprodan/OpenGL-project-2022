@@ -10,7 +10,7 @@ Mario and ghost have to collect stars from the island, ship, and the hidden room
 6. `1` -> Bloom on/off
 7. `2` -> HDR on/off
 8. `3` -> Sharpen effect on/off
-~~9. `4` -> Point shadows on/off~~
+9. ~~`4` -> Point shadows on/off~~
 10. `Q` `E` -> Exposure +/-
 11. `F` -> Flashlight on/off
 
