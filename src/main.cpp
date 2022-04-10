@@ -627,14 +627,15 @@ int main() {
     for (unsigned int i = 0; i < coinAmount; i++){
         glm::mat4 modelCoin = glm::mat4(1.0f);
 
-        if(i < 4)
+        if(i < 4){
             modelCoin = glm::translate(modelCoin, glm::vec3(-1.1f, 5.3f, -0.1f + i*1.9f));
+            modelCoin = glm::rotate(modelCoin, glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        }
         else if(i < 7)
             modelCoin = glm::translate(modelCoin, glm::vec3(0.35f + 1.95f * (i-4), 5.3f, 7.7f));
         else
             modelCoin = glm::translate(modelCoin, glm::vec3(0.35f + 1.95f * (i-7), 5.3f, -2.2f));
 
-        modelCoin = glm::rotate(modelCoin, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         modelCoin = glm::scale(modelCoin, glm::vec3(0.01f));
 
         modelMatrices[i] = modelCoin;
@@ -689,9 +690,6 @@ int main() {
 //                  << programState->camera.Position.y << ' '
 //                  << programState->camera.Position.z << '\n';
 
-//        std::cout << characterPosition.x << ' '
-//                  << characterPosition.y << ' '
-//                  << characterPosition.z << '\n';
 
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
