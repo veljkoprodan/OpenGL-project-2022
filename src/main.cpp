@@ -1,4 +1,4 @@
-﻿#include "imgui.h"
+#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
@@ -58,9 +58,15 @@ enumColor marioColor = red;
 // Mario jump
 void jumpCheck();
 bool jump = false;
+bool inAir = false;
 float jumpSpeed = 0.1;
 float currentJumpHeight = 0;
 float jumpLimit = 1.7f;
+
+// Mario fall
+void fallCheck();
+bool falling = false;
+bool rise = false;
 
 // Choose the character
 enum enumCharacter {mario, ghost};
@@ -686,11 +692,6 @@ int main() {
         // --------------------
         processInput(window);
 
-//        std::cout << programState->camera.Position.x << ' '
-//                  << programState->camera.Position.y << ' '
-//                  << programState->camera.Position.z << '\n';
-
-
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -768,9 +769,9 @@ int main() {
             marioColorCheck();
             roomCheck();
             starCheck();
+            fallCheck();
             if(marioColor == boxColor)
                 boxCheck();
-
         }
         else if(currentCharacter == ghost){
             renderGhost(ourShader, ghostModel);
@@ -1510,6 +1511,7 @@ unsigned int loadTexture(char const * path, bool gammaCorrection)
 
 void jumpCheck(){
     if(jump){
+        inAir = true;
         characterSpeed = 0.2f;
         currentJumpHeight += jumpSpeed;
         characterPosition.y += jumpSpeed;
@@ -1525,6 +1527,31 @@ void jumpCheck(){
     if(jump == false && currentJumpHeight > 0){
         currentJumpHeight -= jumpSpeed;
         characterPosition.y -= jumpSpeed;
+    }
+    else{
+        inAir = false;
+    }
+}
+
+void fallCheck(){
+    if(!inAir && !jump && characterPosition.x >= -11.567f && characterPosition.x <= -9.4321f
+            && characterPosition.z >= -2.83704f && characterPosition.x <= 0.0236122f)
+        falling = true;
+
+    if(falling){
+        if(characterPosition.y <= -20.0f){
+            falling = false;
+            rise = true;
+            characterPosition = glm::vec3(-5.0f, -5.0f, 0.2f);
+        }
+        else
+            characterPosition.y -= 0.2f;
+    }
+    if(rise){
+        if(characterPosition.y >= -3.0f)
+            rise = false;
+        else
+            characterPosition.y += 0.1f;
     }
 }
 
@@ -1542,6 +1569,8 @@ void marioColorCheck(){
     else if(isOnPoint(-17.0f, 2.0f, 0.6f))
         marioColor = pink;
 }
+
+
 
 bool isOnPoint(float x, float z, float delta){
     return(characterPosition.x > x-delta && characterPosition.x < x+delta
@@ -1758,3 +1787,4 @@ double constrainAngle(float x){
         x += 360;
     return x;
 }
+
