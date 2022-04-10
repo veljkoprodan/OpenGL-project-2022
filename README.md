@@ -1,11 +1,26 @@
-# project_base
-Prazan projekat sa pratećim bibliotekama koje koristimo na času. 
+# OpenGL Project
+Mario and ghost have to collect stars from the island, ship, and the hidden room. Mario can jump, change color and go down a pipe to the hidden room, and the ghost can fly.
 
 # Uputstvo
-1. `git clone https://github.com/matf-racunarska-grafika/project_base.git`
-2. CLion -> Open -> path/to/my/project_base
-3. Main se nalazi u src/main.cpp
-4. Cpp fajlovi idu u src folder
-5. Zaglavlja (h i hpp) fajlovi idu u include
-6. Šejderi idu u folder shaders. `Vertex shader` ima ekstenziju `.vs`, `fragment shader` ima ekstenziju `.fs`
-7. ALT+SHIFT+F10 -> project_base -> run
+1. `W` `S` `A` `D` -> Camera movement
+2. `↑` `↓` `←` `→` -> Mario/ghost movement
+3. `SPACE` -> Mario jumps / ghost flies up
+4. `LEFT SHIFT` -> Mushroom goes back to its box / ghost flies down
+5. `C` -> Change the character
+6. `1` -> Bloom on/off
+7. `2` -> HDR on/off
+8. `3` -> Sharpen effect on/off
+~~9. `4` -> Point shadows on/off~~
+10. `Q` `E` -> Exposure +/-
+11. `F` -> Flashlight on/off
+
+#Group A
+1. Cubemaps
+2. Instancing (coins)
+3. Framebuffers (sharpen effect)
+
+#Group B
+1. HDR, Bloom (star in the hidden room)
+2. Normal mapping (coins)
+~~3. Point shadows (in the hidden room)~~ works without HDR/bloom framebuffer?
+
