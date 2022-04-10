@@ -22,5 +22,5 @@ Mario and ghost have to collect stars from the island, ship, and the hidden room
 #Group B
 1. HDR, Bloom (star in the hidden room)
 2. Normal mapping (coins)
-~~3. Point shadows (in the hidden room)~~ works without HDR/bloom framebuffer?
+3. ~~Point shadows (in the hidden room)~~ works without HDR/bloom framebuffer?
 
