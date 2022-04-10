@@ -1,7 +1,7 @@
 # OpenGL Project
 Mario and ghost have to collect stars from the island, ship, and the hidden room. Mario can jump, change color and go down a pipe to the hidden room, and the ghost can fly.
 
-# Uputstvo
+# Instructions
 1. `W` `S` `A` `D` -> Camera movement
 2. `↑` `↓` `←` `→` -> Mario/ghost movement
 3. `SPACE` -> Mario jumps / ghost flies up
