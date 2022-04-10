@@ -1,4 +1,4 @@
-﻿#include "imgui.h"
+#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
@@ -17,25 +17,22 @@
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
-
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
-
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
-
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow *window);
 
-void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
-
 void setLights(Shader shaderName);
+void coinSetLights(Shader shader);
 
 unsigned int loadCubemap(vector<std::string> faces);
-
 unsigned int loadTexture(char const * path, bool gammaCorrection);
 
 void renderQuad();
 void renderCube();
 void renderMario(Shader &shader, Model &marioModel);
 void renderGhost(Shader &shader, Model &ghostModel);
+void renderRoomScene(Shader &shader);
 void renderRoomPipe(Shader &shader, Model &marioModel);
 void renderPipe(Shader& shader, Model &pipeModel);
 void renderStar(Shader& shader, Model &starModel);
@@ -93,7 +90,7 @@ const unsigned int SCR_HEIGHT = 600;
 bool bloom = true;
 bool hdr = true;
 bool sharpenEffect = false;
-float exposure = 1.0f;
+float exposure = 0.7f;
 
 // Camera
 float lastX = SCR_WIDTH / 2.0f;
@@ -233,6 +230,9 @@ int main() {
     Shader blurShader("resources/shaders/blur/blur.vs", "resources/shaders/blur/blur.fs");
     Shader bloomShader("resources/shaders/bloom/bloom.vs", "resources/shaders/bloom/bloom.fs");
     Shader effectShader("resources/shaders/sharpen/effect.vs", "resources/shaders/sharpen/effect.fs");
+    Shader depthShader("resources/shaders/depth/depthShader.vs",
+                       "resources/shaders/depth/depthShader.fs",
+                       "resources/shaders/depth/depthShader.gs");
 
     float boxVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -403,6 +403,7 @@ int main() {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
     }
 
+
     // Create and attach depth buffer (renderbuffer)
     //----------------------------------------------------------
     unsigned int rboDepth;
@@ -415,6 +416,7 @@ int main() {
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "Framebuffer not complete!" << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
     // Ping-pong-framebuffer for blurring
     //----------------------------------------------------------
@@ -437,11 +439,36 @@ int main() {
             std::cout << "Framebuffer not complete!" << std::endl;
     }
 
+
+    // Configure depth map FBO
+    //--------------------------------------------------------------
+//    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+//    unsigned int depthMapFBO;
+//    glGenFramebuffers(1, &depthMapFBO);
+//    // create depth cubemap texture
+//    unsigned int depthCubemap;
+//    glGenTextures(1, &depthCubemap);
+//    glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+//    for (unsigned int i = 0; i < 6; ++i)
+//        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+//    // attach depth texture as FBO's depth buffer
+//    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+//    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+//    glDrawBuffer(GL_NONE);
+//    glReadBuffer(GL_NONE);
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
     // Setting uniform in shaders for bloom
     //----------------------------------------------------------
-
     roomShader.use();
     roomShader.setInt("diffuseTexture", 0);
+//    roomShader.setInt("depthMap", 1);
 
     blurShader.use();
     blurShader.setInt("image", 0);
@@ -590,22 +617,26 @@ int main() {
         unsigned int coinVAO = coinModel.meshes[i].VAO;
         glBindVertexArray(coinVAO);
 
-        glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
-        glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
         glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *) 0);
         glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *) (sizeof(glm::vec4)));
+        glEnableVertexAttribArray(7);
+        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *) (2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(8);
+        glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *) (3 * sizeof(glm::vec4)));
 
-        glVertexAttribDivisor(3, 1);
-        glVertexAttribDivisor(4, 1);
         glVertexAttribDivisor(5, 1);
         glVertexAttribDivisor(6, 1);
+        glVertexAttribDivisor(7, 1);
+        glVertexAttribDivisor(8, 1);
 
         glBindVertexArray(0);
     }
+
+
+    programState->camera.Position = glm::vec3(-14.63f, 0.28f, -7.27f);
+    programState->camera.Front = glm::vec3(0.88f, -0.03f, 0.47f);
 
 
     // Render loop
@@ -622,9 +653,13 @@ int main() {
         // --------------------
         processInput(window);
 
-//        std::cout << characterPosition.x << ' '
-//                  << characterPosition.y << ' '
-//                  << characterPosition.z << '\n';
+//        std::cout << programState->camera.Position.x << ' '
+//                  << programState->camera.Position.y << ' '
+//                  << programState->camera.Position.z << '\n';
+
+//        std::cout << programState->camera.Front.x << ' '
+//                  << programState->camera.Front.y << ' '
+//                  << programState->camera.Front.z << '\n';
 
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -638,6 +673,37 @@ int main() {
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
+
+        // Create depth cubemap transformation matrices
+        //----------------------------------------------------------
+//        float near_plane = 1.0f;
+//        float far_plane = 25.0f;
+//        glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT, near_plane, far_plane);
+//        std::vector<glm::mat4> shadowTransforms;
+//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+
+        // Render the hidden room scene to depth cubemap
+        //----------------------------------------------------------
+//        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+//        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+//        glClear(GL_DEPTH_BUFFER_BIT);
+//        depthShader.use();
+//        for (unsigned int i = 0; i < 6; ++i)
+//            depthShader.setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+//        depthShader.setFloat("far_plane", far_plane);
+//        depthShader.setVec3("lightPos", roomLightPosition);
+//        // The room and cubes inside
+//        renderRoomScene(depthShader);
+//        // Mario
+//        renderMario(depthShader, marioModel);
+//        // Pipe
+//        renderRoomPipe(depthShader, pipeModel);
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
         // Render a chosen character
@@ -682,16 +748,19 @@ int main() {
         // Coin rendering (instancing)
         //----------------------------------------------------------
         coinShader.use();
-        setLights(coinShader);
-        coinShader.setFloat("material.shininess", 32.0f);
+        coinSetLights(coinShader);
         coinShader.setMat4("projection", projection);
         coinShader.setMat4("view", view);
+        coinShader.setFloat("material.shininess", 32.0f);
         coinShader.setInt("texture_diffuse1", 0);
         coinShader.setInt("texture_specular1", 1);
+        coinShader.setInt("texture_normal1", 2);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[0].id);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[1].id);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, coinModel.textures_loaded[2].id);
 
         for (unsigned int i = 0; i < coinModel.meshes.size(); i++)
         {
@@ -815,13 +884,14 @@ int main() {
 
         roomShader.setMat4("projection", projection);
         roomShader.setMat4("view", view);
-        glm::mat4 modelRoom = glm::mat4(1.0f);
-        modelRoom = glm::translate(modelRoom, glm::vec3(20.0f, 0.0f, 0.0f));
-        modelRoom = glm::scale(modelRoom, glm::vec3(10.0f, 5.0f, 7.0f));
-        roomShader.setMat4("model", modelRoom);
-        roomShader.setInt("inverse_normals", true);
-        renderCube();
-        roomShader.setInt("inverse_normals", false);
+//        glm::mat4 modelRoom = glm::mat4(1.0f);
+//        modelRoom = glm::translate(modelRoom, glm::vec3(20.0f, 0.0f, 0.0f));
+//        modelRoom = glm::scale(modelRoom, glm::vec3(10.0f, 5.0f, 7.0f));
+//        roomShader.setMat4("model", modelRoom);
+//        roomShader.setInt("inverse_normals", true);
+//        renderCube();
+//        roomShader.setInt("inverse_normals", false);
+        renderRoomScene(roomShader);
 
         ourShader.use();
         setLights(ourShader);
@@ -1239,6 +1309,36 @@ unsigned int loadCubemap(vector<std::string> faces)
     return textureID;
 }
 
+void coinSetLights(Shader shader){
+    shader.setVec3("pointLight.position", lightPos);
+    shader.setVec3("pointLight.ambient", 0.1f, 0.1f, 0.1f);
+    shader.setVec3("pointLight.diffuse", 0.6f, 0.6f, 0.6f);
+    shader.setVec3("pointLight.specular", 1.0f, 1.0f, 1.0f);
+    shader.setFloat("pointLight.constant", 1.0f);
+    shader.setFloat("pointLight.linear", 0.09f);
+    shader.setFloat("pointLight.quadratic", 0.032f);
+
+    shader.setVec3("lightPos", lightPos);
+    shader.setVec3("viewPos", programState->camera.Position);
+
+    shader.setVec3("dirlight.direction", 1.0f, -1.0, 0.0f);
+    shader.setVec3("dirlight.ambient", 0.05f, 0.05f, 0.05f);
+    shader.setVec3("dirlight.diffuse", 0.4f, 0.4f, 0.4f);
+    shader.setVec3("dirlight.specular", 0.5f, 0.5f, 0.5f);
+
+    shader.setVec3("spotlight.ambient", 0.5f, 0.5f, 0.5f);
+    shader.setVec3("spotlight.diffuse", 1.0f, 1.0f, 1.0f);
+    shader.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
+    shader.setFloat("spotlight.constant", 1.0f);
+    shader.setFloat("spotlight.linear", 0.09f);
+    shader.setFloat("spotlight.quadratic", 0.032f);
+    shader.setVec3("spotlight.position", programState->camera.Position);
+    shader.setVec3("spotlight.direction", programState->camera.Front);
+    shader.setFloat("spotlight.cutOff", glm::cos(glm::radians(12.5f)));
+    shader.setFloat("spotlight.outerCutOff", glm::cos(glm::radians(15.0f)));
+
+}
+
 void setLights(Shader shader){
     shader.setVec3("light.position", lightPos);
     shader.setVec3("viewPos", programState->camera.Position);
@@ -1248,7 +1348,7 @@ void setLights(Shader shader){
     shader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
     shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
     shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
-    //pointlight properties
+    // pointlight properties
     shader.setVec3("pointLights[0].position", lightPos);
     shader.setVec3("pointLights[0].ambient", 0.1f, 0.1f, 0.1f);
     shader.setVec3("pointLights[0].diffuse", 0.6f, 0.6f, 0.6f);
@@ -1373,21 +1473,25 @@ void mushroomCheck(){
 void starCheck(){
     if(isOnPoint(20.0f, 0.0f, 0.5f)){
         starCatched = true;
+        roomLightPosition.y = 100.0f;
     }
 }
 
 void roomCheck(){
     if(isOnPoint(-1.6f,-8.2f, 0.6f && currentCharacter == mario)){
         characterPosition = glm::vec3 (14.3f, -4.5f, -4.77f);
-        programState->camera.Position = glm::vec3(28.55, -0.51, -5.63);
+        programState->camera.Position = glm::vec3(29.67f, -0.11f, -5.66f);
+        programState->camera.Front = glm::vec3(-0.91f, -0.18f, 0.35f);
         inside = true;
     }
 
     if(isOnPoint(13.8f, -5.1f, 0.6f && currentCharacter == mario) && starCatched){
         characterPosition = glm::vec3 (-3.57f, -3.0f, -7.71f);
-        programState->camera.Position = glm::vec3(-15.0f, 0.0f, -3.0f);
+        programState->camera.Position = glm::vec3(-12.17f, 0.5f, -17.0f);
+        programState->camera.Front = glm::vec3(0.6f, -0.1f, 0.78f);
         starCatched = false;
         inside = false;
+        roomLightPosition.y = -4.3f;
     }
 }
 
@@ -1461,3 +1565,28 @@ void renderGhost(Shader &shader, Model &ghostModel){
     shader.setMat4("model", modelGhost);
     ghostModel.Draw(shader);
 }
+
+void renderRoomScene(Shader &shader){
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(20.0f, 0.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(10.0f, 5.0f, 7.0f));
+    shader.setMat4("model", model);
+    glDisable(GL_CULL_FACE);
+    shader.setInt("inverse_normals", 1);
+    renderCube();
+    shader.setInt("inverse_normals", 0);
+    glEnable(GL_CULL_FACE);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(18.0f + 6*sin(glfwGetTime()), 0.0f, 1.0));
+    model = glm::scale(model, glm::vec3(0.75f));
+    shader.setMat4("model", model);
+    renderCube();
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(18.0f - 6*sin(glfwGetTime()), 0.0f, 4.0));
+    model = glm::scale(model, glm::vec3(0.75f));
+    shader.setMat4("model", model);
+    renderCube();
+}
+
