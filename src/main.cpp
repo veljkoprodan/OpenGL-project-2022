@@ -19,6 +19,9 @@
 #include <ctime>
 #include <iostream>
 
+#include "renderer.h"
+#include "utilities.h"
+
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
@@ -30,23 +33,6 @@ void coinSetLights(Shader &shader);
 
 unsigned int loadCubemap(vector<std::string> faces);
 unsigned int loadTexture(char const * path, bool gammaCorrection);
-
-void renderQuad();
-void renderCube();
-void renderMario(Shader &shader, Model &marioModel);
-void renderGhost(Shader &shader, Model &ghostModel);
-void renderRoomScene(Shader &shader);
-void renderRoomPipe(Shader &shader, Model &marioModel);
-void renderPipe(Shader& shader, Model &pipeModel);
-void renderStar(Shader& shader, Model &starModel);
-void renderYellowStar(Shader &shader, Model &yellowStarModel);
-void renderBlueStar(Shader &shader, Model &blueStarModel);
-void renderRedStar(Shader &shader, Model &redStarModel);
-void renderIsland(Shader& shader, Model &islandModel);
-void renderShip(Shader& shader, Model &shipModel);
-void renderMushroom(Shader& shader, Model &mushroomModel);
-
-double constrainAngle(float x);
 
 bool spotlightOn = false;
 
@@ -129,6 +115,8 @@ float lastFrame = 0.0f;
 glm::vec3 lightPos(-5.0f, 5.3f, 0.0f);
 glm::vec3 roomLightPosition(20.3f, -4.3f, 0.0f);
 glm::vec3 roomLightColor(50.0f, 50.0f, 50.0f);
+
+
 
 struct ProgramState {
     glm::vec3 clearColor = glm::vec3(0);
@@ -257,6 +245,8 @@ int main() {
     Shader depthShader("resources/shaders/depth/depthShader.vs",
                        "resources/shaders/depth/depthShader.fs",
                        "resources/shaders/depth/depthShader.gs");
+
+    Renderer renderer;
 
     float boxVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -705,38 +695,6 @@ int main() {
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
 
-        // Create depth cubemap transformation matrices
-        //----------------------------------------------------------
-//        float near_plane = 1.0f;
-//        float far_plane = 25.0f;
-//        glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT, near_plane, far_plane);
-//        std::vector<glm::mat4> shadowTransforms;
-//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
-//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-//        shadowTransforms.push_back(shadowProj * glm::lookAt(roomLightPosition, roomLightPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-
-        // Render the hidden room scene to depth cubemap
-        //----------------------------------------------------------
-//        glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-//        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-//        glClear(GL_DEPTH_BUFFER_BIT);
-//        depthShader.use();
-//        for (unsigned int i = 0; i < 6; ++i)
-//            depthShader.setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
-//        depthShader.setFloat("far_plane", far_plane);
-//        depthShader.setVec3("lightPos", roomLightPosition);
-//        // The room and cubes inside
-//        renderRoomScene(depthShader);
-//        // Mario
-//        renderMario(depthShader, marioModel);
-//        // Pipe
-//        renderRoomPipe(depthShader, pipeModel);
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
         // Render a chosen character
         //----------------------------------------------------------
         ourShader.use();
@@ -761,7 +719,7 @@ int main() {
             else if(marioColor == pink)
                 glBindTexture(GL_TEXTURE_2D, marioTexturePink);
 
-            renderMario(ourShader, marioModel);
+            renderer.renderMario(ourShader, marioModel, characterPosition, characterAngle);
 
 
             jumpCheck();
@@ -774,7 +732,7 @@ int main() {
                 boxCheck();
         }
         else if(currentCharacter == ghost){
-            renderGhost(ourShader, ghostModel);
+            renderer.renderGhost(ourShader, ghostModel, characterPosition, characterAngle);
             redStarCheck();
             blueStarCheck();
         }
@@ -818,21 +776,21 @@ if(!inside){
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        renderMushroom(ourShader, mushroomModel);
-        renderShip(ourShader, shipModel);
+        renderer.renderMushroom(ourShader, mushroomModel, mushroomHeight);
+        renderer.renderShip(ourShader, shipModel);
 
         glDisable(GL_CULL_FACE); // Face culling doesn't work for some models
 
-        renderPipe(ourShader, pipeModel);
-        renderIsland(ourShader, islandModel);
+        renderer.renderPipe(ourShader, pipeModel);
+        renderer.renderIsland(ourShader, islandModel);
         if(!yellowStarCatched)
-            renderYellowStar(ourShader, yellowStarModel);
+            renderer.renderYellowStar(ourShader, yellowStarModel);
 
         if(!blueStarCatched)
-            renderBlueStar(ourShader, blueStarModel);
+            renderer.renderBlueStar(ourShader, blueStarModel);
 
         if(!redStarCatched)
-            renderRedStar(ourShader, redStarModel);
+            renderer.renderRedStar(ourShader, redStarModel);
 
 
         // Box rendering
@@ -980,7 +938,7 @@ if(!inside){
 //        roomShader.setInt("inverse_normals", true);
 //        renderCube();
 //        roomShader.setInt("inverse_normals", false);
-        renderRoomScene(roomShader);
+        renderer.renderRoomScene(roomShader);
 
         ourShader.use();
         setLights(ourShader);
@@ -988,7 +946,7 @@ if(!inside){
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        renderRoomPipe(ourShader, pipeModel);
+        renderer.renderRoomPipe(ourShader, pipeModel);
 
         starShader.use();
         starShader.setMat4("projection", projection);
@@ -996,7 +954,7 @@ if(!inside){
         starShader.setVec3("lightColor", roomLightColor);
 
         if(!starCatched)
-            renderStar(starShader, starModel);
+            renderer.renderStar(starShader, starModel);
 
         glEnable(GL_CULL_FACE);
 }
@@ -1030,7 +988,7 @@ if(!inside){
             glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
             blurShader.setInt("horizontal", horizontal);
             glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);  // bind texture of other framebuffer (or scene if first iteration)
-            renderQuad();
+            renderer.renderQuad();
             horizontal = !horizontal;
             if (first_iteration)
                 first_iteration = false;
@@ -1046,7 +1004,7 @@ if(!inside){
         bloomShader.setInt("hdr", hdr);
         bloomShader.setInt("bloom", bloom);
         bloomShader.setFloat("exposure", exposure);
-        renderQuad();
+        renderer.renderQuad();
 
         // Sharpen effect
         //----------------------------------------------------------
@@ -1057,7 +1015,7 @@ if(!inside){
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, effectColorBuffer);
 
-        renderQuad();
+        renderer.renderQuad();
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -1262,109 +1220,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
             characterPosition = glm::vec3(-5.0f, -3.0f, 0.2f);
         }
     }
-}
-
-unsigned int quadVAO = 0;
-unsigned int quadVBO;
-void renderQuad()
-{
-    if (quadVAO == 0)
-    {
-        float quadVertices[] = {
-                // positions        // texture Coords
-                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-        };
-        // setup plane VAO
-        glGenVertexArrays(1, &quadVAO);
-        glGenBuffers(1, &quadVBO);
-        glBindVertexArray(quadVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    }
-    glBindVertexArray(quadVAO);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindVertexArray(0);
-}
-
-unsigned int cubeVAO = 0;
-unsigned int cubeVBO = 0;
-void renderCube()
-{
-    // initialize (if necessary)
-    if (cubeVAO == 0)
-    {
-        float vertices[] = {
-                // back face
-                -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-                1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-                1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
-                1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-                -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-                -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-                // front face
-                -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-                1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-                1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-                1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-                -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-                -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-                // left face
-                -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-                -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-                -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-                -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-                -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-                -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-                // right face
-                1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-                1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-                1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right
-                1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-                1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-                1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
-                // bottom face
-                -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-                1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-                1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-                1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-                -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-                -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-                // top face
-                -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-                1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-                1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right
-                1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-                -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-                -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left
-        };
-
-        glGenVertexArrays(1, &cubeVAO);
-        glGenBuffers(1, &cubeVBO);
-        // fill buffer
-        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        // link vertex attributes
-        glBindVertexArray(cubeVAO);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
-    // render Cube
-    glBindVertexArray(cubeVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
 }
 
 unsigned int loadCubemap(vector<std::string> faces)
@@ -1596,7 +1451,7 @@ void starCheck(){
 }
 
 void yellowStarCheck(){
-    float angle = constrainAngle((float)glfwGetTime() * 40);
+    float angle = Utilities::constrainAngle((float)glfwGetTime() * 40);
 
     if(angle >= 88.5f && angle <= 91.5f)
         yellowStarCatched = true;
@@ -1656,135 +1511,3 @@ void roomCheck(){
         roomLightPosition.y = -4.3f;
     }
 }
-
-void renderMario(Shader &shader, Model &marioModel){
-    glm::mat4 modelMario = glm::mat4(1.0f);
-    modelMario = glm::translate(modelMario, characterPosition);
-    modelMario = glm::rotate(modelMario, glm::radians(characterAngle - 180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelMario = glm::scale(modelMario, glm::vec3(0.4f));
-    shader.setMat4("model", modelMario);
-    marioModel.Draw(shader);
-}
-
-void renderRoomPipe(Shader &shader, Model &pipeModel){
-    glm::mat4 modelPipe = glm::mat4(1.0f);
-    modelPipe = glm::translate(modelPipe, glm::vec3(9.0f, -5.0f, 0.0f));
-    modelPipe = glm::scale(modelPipe, glm::vec3(0.5f, 0.5f, 0.5f));
-    shader.setMat4("model", modelPipe);
-    glDisable(GL_CULL_FACE);
-    pipeModel.Draw(shader);
-    glEnable(GL_CULL_FACE);
-}
-
-void renderStar(Shader &shader, Model &starModel){
-    glm::mat4 modelStar = glm::mat4(1.0f);
-    modelStar = glm::translate(modelStar, glm::vec3(20.0f, -6.5f, 3.0f));
-    //modelStar = glm::rotate(modelStar,(float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelStar = glm::scale(modelStar, glm::vec3(5.0f, 5.0f, 5.0f));
-    shader.setMat4("model", modelStar);
-    if(!starCatched)
-        starModel.Draw(shader);
-}
-
-void renderMushroom(Shader& shader, Model &mushroomModel){
-    glm::mat4 modelMushroom = glm::mat4(1.0f);
-    modelMushroom = glm::translate(modelMushroom, glm::vec3(-5.0f, -0.3f + mushroomHeight, 0.0f));
-    modelMushroom = glm::rotate(modelMushroom, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelMushroom = glm::scale(modelMushroom, glm::vec3(0.3f));
-    shader.setMat4("model", modelMushroom);
-    mushroomModel.Draw(shader);
-}
-
-void renderShip(Shader &shader, Model &shipModel){
-    glm::mat4 modelShip = glm::mat4(1.0f);
-    modelShip = glm::translate(modelShip, glm::vec3(-18.0f, 0.0f, 0.0f));
-    modelShip = glm::scale(modelShip, glm::vec3(10.0f));
-    shader.setMat4("model", modelShip);
-    shipModel.Draw(shader);
-}
-
-void renderPipe(Shader &shader, Model &pipeModel){
-    glm::mat4 modelPipe = glm::mat4(1.0f);
-    modelPipe = glm::translate(modelPipe, glm::vec3(-5.9f, -3.6f, -3.0f));
-    modelPipe = glm::scale(modelPipe, glm::vec3(0.5f));
-    shader.setMat4("model", modelPipe);
-    pipeModel.Draw(shader);
-}
-
-void renderIsland(Shader &shader, Model &islandModel){
-    glm::mat4 modelIsland = glm::mat4(1.0f);
-    modelIsland = glm::translate(modelIsland, glm::vec3 (0.0f, 0.0f, 0.0f));
-    modelIsland = glm::scale(modelIsland, glm::vec3(10.0f));
-    shader.setMat4("model", modelIsland);
-    islandModel.Draw(shader);
-}
-
-void renderGhost(Shader &shader, Model &ghostModel){
-    glm::mat4 modelGhost = glm::mat4(1.0f);
-    modelGhost = glm::translate(modelGhost, characterPosition);
-    modelGhost = glm::rotate(modelGhost, glm::radians(characterAngle), glm::vec3(0.0f, 1.0f, 0.0f));
-    modelGhost = glm::scale(modelGhost, glm::vec3(0.003f));
-    shader.setMat4("model", modelGhost);
-    ghostModel.Draw(shader);
-}
-
-void renderYellowStar(Shader &shader, Model &yellowStarModel){
-    float angle = constrainAngle((float)glfwGetTime() * 40);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-4.0f, 2.3f, -5.0f));
-    model = glm::rotate(model, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(4.0f));
-    shader.setMat4("model", model);
-    yellowStarModel.Draw(shader);
-}
-
-void renderBlueStar(Shader &shader, Model &blueStarModel){
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(5.0f, -3.0f, 3.0f));
-    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(4.0f));
-    shader.setMat4("model", model);
-    blueStarModel.Draw(shader);
-}
-
-void renderRedStar(Shader &shader, Model &redStarModel){
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-14.5f, 10.0f, -0.8f));
-    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(6.0f));
-    shader.setMat4("model", model);
-    redStarModel.Draw(shader);
-}
-
-void renderRoomScene(Shader &shader){
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(20.0f, 0.0f, 0.0f));
-    model = glm::scale(model, glm::vec3(10.0f, 5.0f, 7.0f));
-    shader.setMat4("model", model);
-    glDisable(GL_CULL_FACE);
-    shader.setInt("inverse_normals", 1);
-    renderCube();
-    shader.setInt("inverse_normals", 0);
-    glEnable(GL_CULL_FACE);
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(18.0f + 6*sin(glfwGetTime()), 0.0f, 1.0));
-    model = glm::scale(model, glm::vec3(0.75f));
-    shader.setMat4("model", model);
-    renderCube();
-
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(18.0f - 6*sin(glfwGetTime()), 0.0f, 4.0));
-    model = glm::scale(model, glm::vec3(0.75f));
-    shader.setMat4("model", model);
-    renderCube();
-}
-
-double constrainAngle(float x){
-    x = fmod(x,360);
-    if (x < 0)
-        x += 360;
-    return x;
-}
-

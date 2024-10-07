@@ -8,7 +8,7 @@
 #include <fstream>
 #include <sstream>
 
-std::string readFileContents(std::string path) {
+inline std::string readFileContents(std::string path) {
     std::ifstream in(path);
     std::stringstream buffer;
     buffer << in.rdbuf();
