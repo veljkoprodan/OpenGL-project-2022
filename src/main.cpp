@@ -15,12 +15,17 @@
 #include <learnopengl/model.h>
 
 #include <cmath>
-#include <cstdlib>
 #include <ctime>
 #include <iostream>
 
+#include "programState.h"
 #include "renderer.h"
 #include "utilities.h"
+#include "character.h"
+#include "scene.h"
+
+
+void stateCheck();
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
@@ -36,60 +41,11 @@ unsigned int loadTexture(char const * path, bool gammaCorrection);
 
 bool spotlightOn = false;
 
-// Mario color
-void marioColorCheck();
-enum enumColor {red, green, blue, lightblue, yellow, pink};
-enumColor marioColor = red;
+ProgramState *programState;
 
-// Mario jump
-void jumpCheck();
-bool jump = false;
-bool inAir = false;
-float jumpSpeed = 0.1;
-float currentJumpHeight = 0;
-float jumpLimit = 1.7f;
-
-// Mario fall
-void fallCheck();
-bool falling = false;
-bool rise = false;
-
-// Choose the character
-enum enumCharacter {mario, ghost};
-enumCharacter currentCharacter = mario;
-
-// Character starting position
-glm::vec3 characterPosition = glm::vec3(-5.0f, -3.0f, 0.2f);
-
-// Did character find the hidden room
-void roomCheck();
-bool inside = false;
-
-// Did character catch the star
-void starCheck();
-void yellowStarCheck();
-void redStarCheck();
-void blueStarCheck();
-bool starCatched = false;
-bool yellowStarCatched = false;
-bool redStarCatched = false;
-bool blueStarCatched = false;
-
-// Character movement
-bool isOnPoint(float x, float z, float delta);
-float characterAngle = 180.0f;
-float characterSpeed = 0.07f;
-glm::vec3 transparentBoxPosition = glm::vec3(-5.9f, -2.8f, -5.4f);
-
-// Mushroom
-void mushroomCheck();
-bool mushroomVisible = false;
-float mushroomHeight = 0;
-
-// Transparent box
-void boxCheck();
-bool boxRising = false;
-bool boxFalling = false;
+Character *character = new Character();
+Scene *scene = new Scene();
+Renderer renderer;
 
 // Shadows
 bool shadows = true;
@@ -111,60 +67,19 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-// LightPos
-glm::vec3 lightPos(-5.0f, 5.3f, 0.0f);
-glm::vec3 roomLightPosition(20.3f, -4.3f, 0.0f);
-glm::vec3 roomLightColor(50.0f, 50.0f, 50.0f);
+void stateCheck()
+{
+    character->marioColorCheck();
+    character->jumpCheck(*scene);
+    character->fallCheck();
+    scene->mushroomCheck();
+    scene->roomCheck(*character, programState);
+    scene->starCheck(*character);
 
-
-
-struct ProgramState {
-    glm::vec3 clearColor = glm::vec3(0);
-    bool ImGuiEnabled = false;
-    Camera camera;
-    bool CameraMouseMovementUpdateEnabled = true;
-    PointLight pointLight;
-    DirLight dirLight;
-    SpotLight spotLight;
-    ProgramState()
-            : camera(glm::vec3(-15.0f, 0.0f, -3.0f)) {}
-
-    void SaveToFile(std::string filename);
-
-    void LoadFromFile(std::string filename);
-};
-
-void ProgramState::SaveToFile(std::string filename) {
-    std::ofstream out(filename);
-    out << clearColor.r << '\n'
-        << clearColor.g << '\n'
-        << clearColor.b << '\n'
-        << ImGuiEnabled << '\n'
-        << camera.Position.x << '\n'
-        << camera.Position.y << '\n'
-        << camera.Position.z << '\n'
-        << camera.Front.x << '\n'
-        << camera.Front.y << '\n'
-        << camera.Front.z << '\n';
+    if(character->marioColor == scene->boxColor)
+        scene->boxCheck(*character);
 }
 
-void ProgramState::LoadFromFile(std::string filename) {
-    std::ifstream in(filename);
-//    if (in) {
-//        in >> clearColor.r
-//           >> clearColor.g
-//           >> clearColor.b
-//           >> ImGuiEnabled
-//           >> camera.Position.x
-//           >> camera.Position.y
-//           >> camera.Position.z
-//           >> camera.Front.x
-//           >> camera.Front.y
-//           >> camera.Front.z;
-//    }
-}
-
-ProgramState *programState;
 
 void DrawImGui(ProgramState *programState);
 
@@ -245,8 +160,6 @@ int main() {
     Shader depthShader("resources/shaders/depth/depthShader.vs",
                        "resources/shaders/depth/depthShader.fs",
                        "resources/shaders/depth/depthShader.gs");
-
-    Renderer renderer;
 
     float boxVertices[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
@@ -453,31 +366,6 @@ int main() {
             std::cout << "Framebuffer not complete!" << std::endl;
     }
 
-
-    // Configure depth map FBO
-    //--------------------------------------------------------------
-//    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
-//    unsigned int depthMapFBO;
-//    glGenFramebuffers(1, &depthMapFBO);
-//    // create depth cubemap texture
-//    unsigned int depthCubemap;
-//    glGenTextures(1, &depthCubemap);
-//    glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
-//    for (unsigned int i = 0; i < 6; ++i)
-//        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-//    // attach depth texture as FBO's depth buffer
-//    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-//    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
-//    glDrawBuffer(GL_NONE);
-//    glReadBuffer(GL_NONE);
-//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
     // Setting uniform in shaders for bloom
     //----------------------------------------------------------
     roomShader.use();
@@ -519,11 +407,6 @@ int main() {
     brickBoxShader.setInt("material.diffuse", 1);
     brickBoxShader.setInt("material.specular", 2);
     stbi_set_flip_vertically_on_load(false);
-
-    // Transparent box color
-    //----------------------------------------------------------
-    std::srand(std::time(nullptr));
-    enumColor boxColor = (enumColor)(std::rand() % 5 + 1);
 
     // Diamond positions and textures
     //----------------------------------------------------------
@@ -703,44 +586,35 @@ int main() {
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        if(currentCharacter == mario){
+        if(character->currentCharacter == Character::mario){
             glActiveTexture(GL_TEXTURE0);
 
-            if(marioColor == red)
+            if(character->marioColor == Utilities::red)
                 glBindTexture(GL_TEXTURE_2D, marioTextureDefault);
-            else if(marioColor == green)
+            else if(character->marioColor == Utilities::green)
                 glBindTexture(GL_TEXTURE_2D, marioTextureGreen);
-            else if(marioColor == blue)
+            else if(character->marioColor == Utilities::blue)
                 glBindTexture(GL_TEXTURE_2D, marioTextureBlue);
-            else if(marioColor == lightblue)
+            else if(character->marioColor == Utilities::lightblue)
                 glBindTexture(GL_TEXTURE_2D, marioTextureLightblue);
-            else if(marioColor == yellow)
+            else if(character->marioColor == Utilities::yellow)
                 glBindTexture(GL_TEXTURE_2D, marioTextureYellow);
-            else if(marioColor == pink)
+            else if(character->marioColor == Utilities::pink)
                 glBindTexture(GL_TEXTURE_2D, marioTexturePink);
 
-            renderer.renderMario(ourShader, marioModel, characterPosition, characterAngle);
-
-
-            jumpCheck();
-            mushroomCheck();
-            marioColorCheck();
-            roomCheck();
-            starCheck();
-            fallCheck();
-            if(marioColor == boxColor)
-                boxCheck();
+            renderer.renderMario(ourShader, marioModel, character->characterPosition, character->characterAngle);
+            stateCheck();
         }
-        else if(currentCharacter == ghost){
-            renderer.renderGhost(ourShader, ghostModel, characterPosition, characterAngle);
-            redStarCheck();
-            blueStarCheck();
+        else if(character->currentCharacter == Character::ghost){
+            renderer.renderGhost(ourShader, ghostModel, character->characterPosition, character->characterAngle);
+            scene->redStarCheck(*character);
+            scene->blueStarCheck(*character);
         }
 
 
 // Render models outside of the hidden room
 //-----------------------------------------------------------------
-if(!inside){
+if(!scene->inside){
 
         // Coin rendering (instancing)
         //----------------------------------------------------------
@@ -776,20 +650,20 @@ if(!inside){
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        renderer.renderMushroom(ourShader, mushroomModel, mushroomHeight);
+        renderer.renderMushroom(ourShader, mushroomModel, scene->mushroomHeight);
         renderer.renderShip(ourShader, shipModel);
 
         glDisable(GL_CULL_FACE); // Face culling doesn't work for some models
 
         renderer.renderPipe(ourShader, pipeModel);
         renderer.renderIsland(ourShader, islandModel);
-        if(!yellowStarCatched)
+        if(!scene->yellowStarCatched)
             renderer.renderYellowStar(ourShader, yellowStarModel);
 
-        if(!blueStarCatched)
+        if(!scene->blueStarCatched)
             renderer.renderBlueStar(ourShader, blueStarModel);
 
-        if(!redStarCatched)
+        if(!scene->redStarCatched)
             renderer.renderRedStar(ourShader, redStarModel);
 
 
@@ -855,20 +729,20 @@ if(!inside){
         //----------------------------------------------------------
         unsigned int transparentBoxTexture;
 
-        if(boxColor == green)
+        if(scene->boxColor == Utilities::green)
             transparentBoxTexture = greenDiamondTexture;
-        else if(boxColor == blue)
+        else if(scene->boxColor == Utilities::blue)
             transparentBoxTexture = blueDiamondTexture;
-        else if(boxColor == lightblue)
+        else if(scene->boxColor == Utilities::lightblue)
             transparentBoxTexture = lightBlueDiamondTexture;
-        else if(boxColor == pink)
+        else if(scene->boxColor == Utilities::pink)
             transparentBoxTexture = pinkDiamondTexture;
-        else if(boxColor == yellow)
+        else if(scene->boxColor == Utilities::yellow)
             transparentBoxTexture = yellowDiamondTexture;
         else
             transparentBoxTexture = redDiamondTexture; // won't happen
 
-        std::pair<glm::vec3, unsigned int> transparentBox = {transparentBoxPosition, transparentBoxTexture};
+        std::pair<glm::vec3, unsigned int> transparentBox = {scene->transparentBoxPosition, transparentBoxTexture};
 
         // Sort and render diamonds and the box (blending)
         //----------------------------------------------------------
@@ -881,11 +755,11 @@ if(!inside){
             diamondsSorted[distance] = diamond;
         }
         // Add the transparent box to the map so it can be sorted too
-        float boxDistance = glm::length(programState->camera.Position - transparentBoxPosition);
+        float boxDistance = glm::length(programState->camera.Position - scene->transparentBoxPosition);
         diamondsSorted[boxDistance] = transparentBox;
 
         for(auto diamond = diamondsSorted.rbegin(); diamond != diamondsSorted.rend(); diamond++){
-            if(diamond->second.first == transparentBoxPosition){
+            if(diamond->second.first == scene->transparentBoxPosition){
                 diamondShader.use();
                 diamondShader.setMat4("projection", projection);
                 diamondShader.setMat4("view", view);
@@ -893,7 +767,7 @@ if(!inside){
                 glBindTexture(GL_TEXTURE_2D, transparentBoxTexture);
                 glBindVertexArray(boxVAO);
                 glm::mat4 modelBox = glm::mat4(1.0f);
-                modelBox = glm::translate(modelBox, transparentBoxPosition);
+                modelBox = glm::translate(modelBox, scene->transparentBoxPosition);
                 modelBox = glm::scale(modelBox, glm::vec3(1.7f));
                 diamondShader.setMat4("model", modelBox);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -915,7 +789,7 @@ if(!inside){
 
 // Render the hidden room
 //------------------------------------------------------------------
-}else if(inside){
+}else if(scene->inside){
 
         glDisable(GL_CULL_FACE);
 
@@ -925,19 +799,13 @@ if(!inside){
         glBindTexture(GL_TEXTURE_2D, stoneTexture);
 
         roomShader.use();
-        roomShader.setVec3("lights.Position", roomLightPosition);
-        roomShader.setVec3("lights.Color", roomLightColor);
+        roomShader.setVec3("lights.Position", scene->roomLightPosition);
+        roomShader.setVec3("lights.Color", scene->roomLightColor);
         roomShader.setVec3("viewPos", programState->camera.Position);
 
         roomShader.setMat4("projection", projection);
         roomShader.setMat4("view", view);
-//        glm::mat4 modelRoom = glm::mat4(1.0f);
-//        modelRoom = glm::translate(modelRoom, glm::vec3(20.0f, 0.0f, 0.0f));
-//        modelRoom = glm::scale(modelRoom, glm::vec3(10.0f, 5.0f, 7.0f));
-//        roomShader.setMat4("model", modelRoom);
-//        roomShader.setInt("inverse_normals", true);
-//        renderCube();
-//        roomShader.setInt("inverse_normals", false);
+
         renderer.renderRoomScene(roomShader);
 
         ourShader.use();
@@ -951,9 +819,9 @@ if(!inside){
         starShader.use();
         starShader.setMat4("projection", projection);
         starShader.setMat4("view", view);
-        starShader.setVec3("lightColor", roomLightColor);
+        starShader.setVec3("lightColor", scene->roomLightColor);
 
-        if(!starCatched)
+        if(!scene->starCatched)
             renderer.renderStar(starShader, starModel);
 
         glEnable(GL_CULL_FACE);
@@ -1051,33 +919,33 @@ void processInput(GLFWwindow *window) {
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
-        characterAngle += 2.0f;
-        if(characterAngle >= 360.0f)
-            characterAngle -= 360.0f;
+        character->characterAngle += 2.0f;
+        if(character->characterAngle >= 360.0f)
+            character->characterAngle -= 360.0f;
     }
     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
-        characterAngle -= 2.0f;
-        if(characterAngle <= -360.0f)
-            characterAngle += 360.0f;
+        character->characterAngle -= 2.0f;
+        if(character->characterAngle <= -360.0f)
+            character->characterAngle += 360.0f;
     }
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && !boxRising){
-        characterPosition.x += characterSpeed * (float)sin(glm::radians(characterAngle));
-        characterPosition.z += characterSpeed * (float)cos(glm::radians(characterAngle));
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS && !scene->boxRising){
+        character->characterPosition.x += character->characterSpeed * (float)sin(glm::radians(character->characterAngle));
+        character->characterPosition.z += character->characterSpeed * (float)cos(glm::radians(character->characterAngle));
     }
 
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !boxRising){
-        characterPosition.x -= characterSpeed * (float)sin(glm::radians(characterAngle));
-        characterPosition.z -= characterSpeed * (float)cos(glm::radians(characterAngle));
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS && !scene->boxRising){
+        character->characterPosition.x -= character->characterSpeed * (float)sin(glm::radians(character->characterAngle));
+        character->characterPosition.z -= character->characterSpeed * (float)cos(glm::radians(character->characterAngle));
     }
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS){
-        if(currentCharacter == ghost)
-            characterPosition.y += 0.05;
+        if(character->currentCharacter == Character::ghost)
+            character->characterPosition.y += 0.05;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS){
-        if(currentCharacter == ghost)
-            characterPosition.y -= 0.05;
+        if(character->currentCharacter == Character::ghost)
+            character->characterPosition.y -= 0.05;
     }
 }
 
@@ -1151,13 +1019,13 @@ void DrawImGui(ProgramState *programState) {
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
-        if(currentCharacter == mario && !boxRising)
-            jump = true;
+        if(character->currentCharacter == Character::mario && !scene->boxRising)
+            character->jump = true;
     }
 
     if(key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS){
-        if(currentCharacter == mario)
-            mushroomVisible = false;
+        if(character->currentCharacter == Character::mario)
+            scene->mushroomVisible = false;
     }
 
     if(key == GLFW_KEY_1 && action == GLFW_PRESS){
@@ -1211,13 +1079,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
 
     if(key == GLFW_KEY_C && action == GLFW_PRESS){
-        if(!inside){
-            if(currentCharacter == mario)
-                currentCharacter = ghost;
+        if(!scene->inside){
+            if(character->currentCharacter == Character::mario)
+                character->currentCharacter = Character::ghost;
             else
-                currentCharacter = mario;
+                character->currentCharacter = Character::mario;
 
-            characterPosition = glm::vec3(-5.0f, -3.0f, 0.2f);
+            character->characterPosition = glm::vec3(-5.0f, -3.0f, 0.2f);
         }
     }
 }
@@ -1253,7 +1121,7 @@ unsigned int loadCubemap(vector<std::string> faces)
 }
 
 void coinSetLights(Shader &shader){
-    shader.setVec3("pointLight.position", lightPos);
+    shader.setVec3("pointLight.position", scene->lightPos);
     shader.setVec3("pointLight.ambient", 0.1f, 0.1f, 0.1f);
     shader.setVec3("pointLight.diffuse", 0.6f, 0.6f, 0.6f);
     shader.setVec3("pointLight.specular", 1.0f, 1.0f, 1.0f);
@@ -1261,7 +1129,7 @@ void coinSetLights(Shader &shader){
     shader.setFloat("pointLight.linear", 0.09f);
     shader.setFloat("pointLight.quadratic", 0.032f);
 
-    shader.setVec3("lightPos", lightPos);
+    shader.setVec3("lightPos", scene->lightPos);
     shader.setVec3("viewPos", programState->camera.Position);
 
     shader.setVec3("dirlight.direction", 1.0f, -1.0, 0.0f);
@@ -1283,7 +1151,7 @@ void coinSetLights(Shader &shader){
 }
 
 void setLights(Shader &shader){
-    shader.setVec3("light.position", lightPos);
+    shader.setVec3("light.position", scene->lightPos);
     shader.setVec3("viewPos", programState->camera.Position);
 
     // directional light
@@ -1292,7 +1160,7 @@ void setLights(Shader &shader){
     shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
     shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
     // pointlight properties
-    shader.setVec3("pointLights[0].position", lightPos);
+    shader.setVec3("pointLights[0].position", scene->lightPos);
     shader.setVec3("pointLights[0].ambient", 0.1f, 0.1f, 0.1f);
     shader.setVec3("pointLights[0].diffuse", 0.6f, 0.6f, 0.6f);
     shader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
@@ -1362,152 +1230,4 @@ unsigned int loadTexture(char const * path, bool gammaCorrection)
     }
 
     return textureID;
-}
-
-void jumpCheck(){
-    if(jump){
-        inAir = true;
-        characterSpeed = 0.2f;
-        currentJumpHeight += jumpSpeed;
-        characterPosition.y += jumpSpeed;
-    }
-
-    if(currentJumpHeight >= jumpLimit){
-        jump = false;
-        characterSpeed = 0.07f;
-        if(isOnPoint(-5.0f, 0.0f, 0.5f))
-            mushroomVisible = true;
-    }
-
-    if(jump == false && currentJumpHeight > 0){
-        currentJumpHeight -= jumpSpeed;
-        characterPosition.y -= jumpSpeed;
-    }
-    else{
-        inAir = false;
-    }
-}
-
-void fallCheck(){
-    if(!inAir && !jump && characterPosition.x >= -11.567f && characterPosition.x <= -9.4321f
-            && characterPosition.z >= -2.83704f && characterPosition.x <= 0.0236122f)
-        falling = true;
-
-    if(falling){
-        if(characterPosition.y <= -20.0f){
-            falling = false;
-            rise = true;
-            characterPosition = glm::vec3(-5.0f, -5.0f, 0.2f);
-        }
-        else
-            characterPosition.y -= 0.2f;
-    }
-    if(rise){
-        if(characterPosition.y >= -3.0f)
-            rise = false;
-        else
-            characterPosition.y += 0.1f;
-    }
-}
-
-void marioColorCheck(){
-    if(isOnPoint(-19.0f, 2.0f, 0.6f))
-        marioColor = red;
-    else if(isOnPoint(-20.0f, 4.0f, 0.6f))
-        marioColor = blue;
-    else if(isOnPoint(-19.0f, 6.0f, 0.6f))
-        marioColor = green;
-    else if(isOnPoint(-17.0f, 6.0f, 0.6f))
-        marioColor = lightblue;
-    else if(isOnPoint(-16.0f, 4.0f, 0.6f))
-        marioColor = yellow;
-    else if(isOnPoint(-17.0f, 2.0f, 0.6f))
-        marioColor = pink;
-}
-
-
-
-bool isOnPoint(float x, float z, float delta){
-    return(characterPosition.x > x-delta && characterPosition.x < x+delta
-           && characterPosition.z > z-delta && characterPosition.z < z + delta);
-}
-
-void mushroomCheck(){
-    if(mushroomVisible){
-        if(mushroomHeight < 0.8f)
-            mushroomHeight += 0.03;
-    }
-    else{
-        if(mushroomHeight > 0)
-            mushroomHeight -= 0.03;
-    }
-}
-
-void starCheck(){
-    if(isOnPoint(20.0f, 0.0f, 0.5f)){
-        starCatched = true;
-        roomLightPosition.y = 100.0f;
-    }
-}
-
-void yellowStarCheck(){
-    float angle = Utilities::constrainAngle((float)glfwGetTime() * 40);
-
-    if(angle >= 88.5f && angle <= 91.5f)
-        yellowStarCatched = true;
-}
-
-void redStarCheck(){
-    if(isOnPoint(-18.07f, -0.85f, 0.6f) && characterPosition.y >= 11.8f && characterPosition.y <= 13.3f)
-        redStarCatched = true;
-}
-
-void blueStarCheck(){
-    if(isOnPoint(2.68f, 3.12f, 0.6f) && characterPosition.y >= -1.7f && characterPosition.y <= -1.2f)
-        blueStarCatched = true;
-}
-
-void boxCheck(){
-    if(isOnPoint(-6.36f, -5.32f, 0.5f) && !boxRising && !boxFalling && !yellowStarCatched){
-        boxRising = true;
-    }
-
-    if(boxRising){
-        if(characterPosition.y >= 3.8f){
-            boxRising = false;
-            yellowStarCheck();
-            if(yellowStarCatched){
-                boxFalling = true;
-            }
-        }
-        else{
-            transparentBoxPosition.y += 0.1f;
-            characterPosition.y += 0.1f;
-        }
-    }
-
-    if(boxFalling){
-        transparentBoxPosition.y -= 0.1f;
-        characterPosition.y -= 0.1f;
-        if(characterPosition.y <= -3.0f)
-            boxFalling = false;
-    }
-}
-
-void roomCheck(){
-    if(isOnPoint(-1.6f,-8.2f, 0.6f && currentCharacter == mario)){
-        characterPosition = glm::vec3 (14.3f, -4.5f, -4.77f);
-        programState->camera.Position = glm::vec3(29.67f, -0.11f, -5.66f);
-        programState->camera.Front = glm::vec3(-0.91f, -0.18f, 0.35f);
-        inside = true;
-    }
-
-    if(isOnPoint(13.8f, -5.1f, 0.6f && currentCharacter == mario) && starCatched){
-        characterPosition = glm::vec3 (-3.57f, -3.0f, -7.71f);
-        programState->camera.Position = glm::vec3(-12.17f, 0.5f, -17.0f);
-        programState->camera.Front = glm::vec3(0.6f, -0.1f, 0.78f);
-        starCatched = false;
-        inside = false;
-        roomLightPosition.y = -4.3f;
-    }
 }

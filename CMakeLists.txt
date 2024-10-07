@@ -47,7 +47,12 @@ add_executable(${PROJECT_NAME}
         src/renderer.cpp
         src/renderer.h
         src/utilities.cpp
-        src/utilities.h)
+        src/utilities.h
+        src/scene.cpp
+        src/scene.h
+        src/character.cpp
+        src/character.h
+        src/programState.h)
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 

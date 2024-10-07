@@ -9,7 +9,10 @@
 
 class Utilities {
 public:
+    enum enumColor {red, green, blue, lightblue, yellow, pink};
+
     static double constrainAngle(float x);
+
 };
 
 
