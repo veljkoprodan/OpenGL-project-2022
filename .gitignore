@@ -29,3 +29,11 @@
 *.out
 *.app
 CMakeLists.txt.user
+MarioOpenGL
+
+# Build files
+cmake-build-debug*
+.idea*
+
+# Program state
+resources/program_state.txt
