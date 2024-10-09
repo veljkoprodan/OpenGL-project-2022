@@ -17,10 +17,15 @@ public:
     Scene();
     ~Scene() = default;
 
-    // LightPos
+    // Light
     glm::vec3 lightPos;
     glm::vec3 roomLightPosition;
     glm::vec3 roomLightColor;
+    bool spotlightOn;
+
+    void setLights(Shader &shader, ProgramState *programState);
+    void coinSetLights(Shader &shader, ProgramState *programState);
+
 
     // Is character in the hidden room
     void roomCheck(Character&, ProgramState*);

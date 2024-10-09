@@ -24,25 +24,16 @@
 #include "character.h"
 #include "scene.h"
 
-
-void stateCheck();
-
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow *window);
-
-void setLights(Shader &shader);
-void coinSetLights(Shader &shader);
-
+void stateCheck();
 unsigned int loadCubemap(vector<std::string> faces);
-unsigned int loadTexture(char const * path, bool gammaCorrection);
-
-bool spotlightOn = false;
+void DrawImGui(ProgramState *programState);
 
 ProgramState *programState;
-
 Character *character = new Character();
 Scene *scene = new Scene();
 Renderer renderer;
@@ -67,22 +58,6 @@ bool firstMouse = true;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-void stateCheck()
-{
-    character->marioColorCheck();
-    character->jumpCheck(*scene);
-    character->fallCheck();
-    scene->mushroomCheck();
-    scene->roomCheck(*character, programState);
-    scene->starCheck(*character);
-
-    if(character->marioColor == scene->boxColor)
-        scene->boxCheck(*character);
-}
-
-
-void DrawImGui(ProgramState *programState);
-
 int main() {
     // glfw: initialize and configure
     // ------------------------------
@@ -97,7 +72,7 @@ int main() {
 
     // Glfw window creation
     //----------------------------------------------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Mario OpenGL", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -296,19 +271,19 @@ int main() {
     // Load Mario cube textures
     //----------------------------------------------------------
     stbi_set_flip_vertically_on_load(true);
-    unsigned int questionambientMap  = loadTexture(FileSystem::getPath("resources/textures/mario_ambient.jpg").c_str(),true);
-    unsigned int questiondiffuseMap  = loadTexture(FileSystem::getPath("resources/textures/mario_cube.jpg").c_str(),true);
-    unsigned int questionspecularMap = loadTexture(FileSystem::getPath("resources/textures/mario_specular.jpg").c_str(),true);
+    unsigned int questionambientMap  = Renderer::loadTexture(FileSystem::getPath("resources/textures/mario_ambient.jpg").c_str(),true);
+    unsigned int questiondiffuseMap  = Renderer::loadTexture(FileSystem::getPath("resources/textures/mario_cube.jpg").c_str(),true);
+    unsigned int questionspecularMap = Renderer::loadTexture(FileSystem::getPath("resources/textures/mario_specular.jpg").c_str(),true);
 
     // Load brick cube textures
     //----------------------------------------------------------
-    unsigned int brickambientMap  = loadTexture(FileSystem::getPath("resources/textures/brick_ambient.jpg").c_str(),true);
-    unsigned int brickdiffuseMap  = loadTexture(FileSystem::getPath("resources/textures/brick_diffuse.jpg").c_str(),true);
-    unsigned int brickspecularMap = loadTexture(FileSystem::getPath("resources/textures/brick_specular.jpg").c_str(),true);
+    unsigned int brickambientMap  = Renderer::loadTexture(FileSystem::getPath("resources/textures/brick_ambient.jpg").c_str(),true);
+    unsigned int brickdiffuseMap  = Renderer::loadTexture(FileSystem::getPath("resources/textures/brick_diffuse.jpg").c_str(),true);
+    unsigned int brickspecularMap = Renderer::loadTexture(FileSystem::getPath("resources/textures/brick_specular.jpg").c_str(),true);
 
     // Load hidden room texture
     //----------------------------------------------------------
-    unsigned int stoneTexture = loadTexture(FileSystem::getPath("resources/textures/stone_texture.jpeg").c_str(), true); // note that we're loading the texture as an SRGB texture
+    unsigned int stoneTexture = Renderer::loadTexture(FileSystem::getPath("resources/textures/stone_texture.jpeg").c_str(), true); // note that we're loading the texture as an SRGB texture
 
 
     // Configuring floating point framebuffer
@@ -412,27 +387,27 @@ int main() {
     //----------------------------------------------------------
     std::vector< std::pair<glm::vec3, unsigned int> > diamonds;
 
-    unsigned int redDiamondTexture = loadTexture(
+    unsigned int redDiamondTexture = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/diamonds/red-transparent.png").c_str(),true);
     diamonds.push_back({glm::vec3(-19.0f, -4.0f, 2.0f), redDiamondTexture});
 
-    unsigned int blueDiamondTexture = loadTexture(
+    unsigned int blueDiamondTexture = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/diamonds/blue-transparent.png").c_str(),true);
     diamonds.push_back({glm::vec3(-20.0f, -4.0f, 4.0f), blueDiamondTexture});
 
-    unsigned int greenDiamondTexture = loadTexture(
+    unsigned int greenDiamondTexture = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/diamonds/green-transparent.png").c_str(),true);
     diamonds.push_back({glm::vec3(-19.0f, -4.0f, 6.0f), greenDiamondTexture});
 
-    unsigned int lightBlueDiamondTexture = loadTexture(
+    unsigned int lightBlueDiamondTexture = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/diamonds/light-blue-transparent.png").c_str(),true);
     diamonds.push_back({glm::vec3(-17.0f, -4.0f, 6.0f), lightBlueDiamondTexture});
 
-    unsigned int yellowDiamondTexture = loadTexture(
+    unsigned int yellowDiamondTexture = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/diamonds/yellow-transparent.png").c_str(),true);
     diamonds.push_back({glm::vec3(-16.0f, -4.0f, 4.0f), yellowDiamondTexture});
 
-    unsigned int pinkDiamondTexture = loadTexture(
+    unsigned int pinkDiamondTexture = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/diamonds/pink-transparent.png").c_str(),true);
     diamonds.push_back({glm::vec3(-17.0f, -4.0f, 2.0f), pinkDiamondTexture});
 
@@ -442,17 +417,17 @@ int main() {
 
     // Mario textures
     //----------------------------------------------------------
-    unsigned int marioTextureDefault = loadTexture(
+    unsigned int marioTextureDefault = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/mario/default.jpg").c_str(),true);
-    unsigned int marioTextureGreen = loadTexture(
+    unsigned int marioTextureGreen = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/mario/green.jpg").c_str(),true);
-    unsigned int marioTextureBlue = loadTexture(
+    unsigned int marioTextureBlue = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/mario/blue.jpg").c_str(),true);
-    unsigned int marioTextureLightblue = loadTexture(
+    unsigned int marioTextureLightblue = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/mario/lightblue.jpg").c_str(),true);
-    unsigned int marioTextureYellow = loadTexture(
+    unsigned int marioTextureYellow = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/mario/yellow.jpg").c_str(),true);
-    unsigned int marioTexturePink = loadTexture(
+    unsigned int marioTexturePink = Renderer::loadTexture(
             FileSystem::getPath("resources/textures/mario/pink.jpg").c_str(),true);
 
     ourShader.use();
@@ -581,7 +556,7 @@ int main() {
         // Render a chosen character
         //----------------------------------------------------------
         ourShader.use();
-        setLights(ourShader);
+        scene->setLights(ourShader, programState);
         ourShader.setFloat("material.shininess", 32.0f);
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
@@ -619,7 +594,7 @@ if(!scene->inside){
         // Coin rendering (instancing)
         //----------------------------------------------------------
         coinShader.use();
-        coinSetLights(coinShader);
+        scene->coinSetLights(coinShader, programState);
         coinShader.setMat4("projection", projection);
         coinShader.setMat4("view", view);
         coinShader.setFloat("material.shininess", 32.0f);
@@ -645,7 +620,7 @@ if(!scene->inside){
         // Render other models
         //----------------------------------------------------------
         ourShader.use();
-        setLights(ourShader);
+        scene->setLights(ourShader, programState);
         ourShader.setFloat("material.shininess", 32.0f);
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
@@ -679,7 +654,7 @@ if(!scene->inside){
         glBindTexture(GL_TEXTURE_2D, brickspecularMap);
 
         brickBoxShader.use();
-        setLights(brickBoxShader);
+        scene->setLights(brickBoxShader, programState);
         brickBoxShader.setFloat("material.shininess", 32.0f);
         brickBoxShader.setMat4("projection", projection);
         brickBoxShader.setMat4("view", view);
@@ -710,7 +685,7 @@ if(!scene->inside){
         glBindTexture(GL_TEXTURE_2D, questionspecularMap);
 
         marioBoxShader.use();
-        setLights(marioBoxShader);
+        scene->setLights(marioBoxShader, programState);
         marioBoxShader.setFloat("material.shininess", 32.0f);
         marioBoxShader.setMat4("projection", projection);
         marioBoxShader.setMat4("view", view);
@@ -809,7 +784,7 @@ if(!scene->inside){
         renderer.renderRoomScene(roomShader);
 
         ourShader.use();
-        setLights(ourShader);
+        scene->setLights(ourShader, programState);
         ourShader.setFloat("material.shininess", 32.0f);
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
@@ -1062,7 +1037,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     }
 
     if (key == GLFW_KEY_F && action == GLFW_PRESS)
-        spotlightOn = !spotlightOn;
+        scene->spotlightOn = !scene->spotlightOn;
 
     if(key == GLFW_KEY_Q && action == GLFW_PRESS){
         if(exposure > 0.1f)
@@ -1120,114 +1095,15 @@ unsigned int loadCubemap(vector<std::string> faces)
     return textureID;
 }
 
-void coinSetLights(Shader &shader){
-    shader.setVec3("pointLight.position", scene->lightPos);
-    shader.setVec3("pointLight.ambient", 0.1f, 0.1f, 0.1f);
-    shader.setVec3("pointLight.diffuse", 0.6f, 0.6f, 0.6f);
-    shader.setVec3("pointLight.specular", 1.0f, 1.0f, 1.0f);
-    shader.setFloat("pointLight.constant", 1.0f);
-    shader.setFloat("pointLight.linear", 0.09f);
-    shader.setFloat("pointLight.quadratic", 0.032f);
-
-    shader.setVec3("lightPos", scene->lightPos);
-    shader.setVec3("viewPos", programState->camera.Position);
-
-    shader.setVec3("dirlight.direction", 1.0f, -1.0, 0.0f);
-    shader.setVec3("dirlight.ambient", 0.05f, 0.05f, 0.05f);
-    shader.setVec3("dirlight.diffuse", 0.4f, 0.4f, 0.4f);
-    shader.setVec3("dirlight.specular", 0.5f, 0.5f, 0.5f);
-
-    shader.setVec3("spotlight.ambient", 0.5f, 0.5f, 0.5f);
-    shader.setVec3("spotlight.diffuse", 1.0f, 1.0f, 1.0f);
-    shader.setVec3("spotlight.specular", 1.0f, 1.0f, 1.0f);
-    shader.setFloat("spotlight.constant", 1.0f);
-    shader.setFloat("spotlight.linear", 0.09f);
-    shader.setFloat("spotlight.quadratic", 0.032f);
-    shader.setVec3("spotlight.position", programState->camera.Position);
-    shader.setVec3("spotlight.direction", programState->camera.Front);
-    shader.setFloat("spotlight.cutOff", glm::cos(glm::radians(12.5f)));
-    shader.setFloat("spotlight.outerCutOff", glm::cos(glm::radians(15.0f)));
-
-}
-
-void setLights(Shader &shader){
-    shader.setVec3("light.position", scene->lightPos);
-    shader.setVec3("viewPos", programState->camera.Position);
-
-    // directional light
-    shader.setVec3("dirLight.direction", 1.0f, -1.0, 0.0f);
-    shader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-    shader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-    shader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
-    // pointlight properties
-    shader.setVec3("pointLights[0].position", scene->lightPos);
-    shader.setVec3("pointLights[0].ambient", 0.1f, 0.1f, 0.1f);
-    shader.setVec3("pointLights[0].diffuse", 0.6f, 0.6f, 0.6f);
-    shader.setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
-
-    shader.setFloat("pointLights[0].constant", 1.0f);
-    shader.setFloat("pointLights[0].linear", 0.09f);
-    shader.setFloat("pointLights[0].quadratic", 0.032f);
-    // spotLight
-    shader.setVec3("spotLight.position", programState->camera.Position);
-    shader.setVec3("spotLight.direction", programState->camera.Front);
-    shader.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-    shader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
-    shader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-    shader.setFloat("spotLight.constant", 1.0f);
-    shader.setFloat("spotLight.linear", 0.09f);
-    shader.setFloat("spotLight.quadratic", 0.032f);
-    shader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
-    shader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
-
-    if(!spotlightOn){
-        shader.setVec3("spotLight.diffuse", 0.0f, 0.0f, 0.0f);
-        shader.setVec3("spotLight.specular", 0.0f, 0.0f, 0.0f);
-    }
-}
-
-unsigned int loadTexture(char const * path, bool gammaCorrection)
+void stateCheck()
 {
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
+    character->marioColorCheck();
+    character->jumpCheck(*scene);
+    character->fallCheck();
+    scene->mushroomCheck();
+    scene->roomCheck(*character, programState);
+    scene->starCheck(*character);
 
-    int width, height, nrComponents;
-    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
-    if (data)
-    {
-        GLenum internalFormat;
-        GLenum dataFormat;
-        if (nrComponents == 1)
-        {
-            internalFormat = dataFormat = GL_RED;
-        }
-        else if (nrComponents == 3)
-        {
-            internalFormat = gammaCorrection ? GL_SRGB : GL_RGB;
-            dataFormat = GL_RGB;
-        }
-        else if (nrComponents == 4)
-        {
-            internalFormat = gammaCorrection ? GL_SRGB_ALPHA : GL_RGBA;
-            dataFormat = GL_RGBA;
-        }
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, dataFormat, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
-    }
-
-    return textureID;
+    if(character->marioColor == scene->boxColor)
+        scene->boxCheck(*character);
 }

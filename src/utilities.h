@@ -5,8 +5,6 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-
-
 class Utilities {
 public:
     enum enumColor {red, green, blue, lightblue, yellow, pink};
@@ -14,7 +12,6 @@ public:
     static double constrainAngle(float x);
 
 };
-
 
 
 #endif //UTILITIES_H

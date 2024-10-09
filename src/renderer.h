@@ -24,6 +24,8 @@ public:
     unsigned int cubeVAO;
     unsigned int cubeVBO;
 
+    unsigned int static loadTexture(char const * path, bool gammaCorrection);
+
     void renderQuad();
     void renderCube();
     void renderMario(Shader &shader, Model &marioModel, glm::vec3 position, float angle);
